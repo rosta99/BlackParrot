@@ -1,11 +1,9 @@
 
 module bsg_fifo_1r1w_rolly
-  #(parameter width_p              = "inv"
-    , parameter els_p              = "inv"
-    , parameter ready_THEN_valid_p = 0
-    
-    , localparam ptr_width_lp = `BSG_SAFE_CLOG2(els_p)
-    )
+ #(parameter width_p              = "inv"
+   , parameter els_p              = "inv"
+   , parameter ready_THEN_valid_p = 0
+   )
   (input                  clk_i
    , input                reset_i
 
@@ -22,6 +20,8 @@ module bsg_fifo_1r1w_rolly
    , input                yumi_i
    );
   
+  localparam ptr_width_lp = `BSG_SAFE_CLOG2(els_p);
+
   // One read pointer, one write pointer, one checkpoint pointer
   // ptr_width + 1 for wrap bit
   logic [ptr_width_lp:0] wptr_r, rptr_r, cptr_r;

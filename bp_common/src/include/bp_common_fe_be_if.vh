@@ -41,6 +41,7 @@
    */                                                                                              \
   typedef struct packed                                                                            \
   {                                                                                                \
+    bp_fe_fetch_type_e                        fetch_type;                                          \
     logic [vaddr_width_mp-1:0]                pc;                                                  \
     logic [bp_instr_width_gp-1:0]             instr;                                               \
     logic [branch_metadata_fwd_width_mp-1:0]  branch_metadata_fwd;                                 \
@@ -181,6 +182,21 @@
   , localparam fe_cmd_width_lp=`bp_fe_cmd_width(vaddr_width_mp, paddr_width_mp, asid_width_mp, branch_metadata_fwd_width_mp)
 
 /*
+ * bp_fe_fetch_type_e specifies what size of instruction to expect in the packet. 
+ * e_fe_fetch_half: a compressed instruction in the lower 16 bits of the fetch packet
+ * e_fe_fetch_two_half: 2 sequential compressed instructions
+ * e_fe_fetch_full: a single 32 bit instruction
+ *  Note: differentiating between two_half and full is essentially a pre-decode. The BE could also
+ *    do this if it turns out to be a critical path in the FE
+ */
+typedef enum bit [1:0]
+{
+  e_fe_fetch_half      = 0
+  ,e_fe_fetch_two_half = 1
+  ,e_fe_fetch_full     = 2
+} bp_fe_fetch_type_e;
+
+/*
  * bp_fe_queue_s can either contain an instruction or exception.
  * bp_fe_queue_type_e specifies which information it contains.
  */
@@ -296,7 +312,7 @@ typedef enum logic [2:0]
  * examine this code carefully. Else, clients should not have to use these macros
  */
 `define bp_fe_fetch_width_no_padding(vaddr_width_mp, branch_metadata_fwd_width_mp)                 \
-  (vaddr_width_mp + bp_instr_width_gp + branch_metadata_fwd_width_mp)
+  ($bits(bp_fe_fetch_type_e) + vaddr_width_mp + bp_instr_width_gp + branch_metadata_fwd_width_mp)
 
 `define bp_fe_exception_width_no_padding(vaddr_width_mp)                                           \
   (vaddr_width_mp + $bits(bp_fe_exception_code_e))

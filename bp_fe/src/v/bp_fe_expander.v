@@ -2,9 +2,9 @@
 module bp_fe_expander
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
- import bp_be_rv64_pkg::*;
+ import bp_common_rv64_pkg::*;
  import bp_be_pkg::*;
- #(parameter bp_cfg_e cfg_p = e_bp_inv_cfg
+ #(parameter bp_params_e cfg_p = e_bp_inv_cfg
    `declare_bp_proc_params(cfg_p)
    )
   (input [instr_width_p/2-1:0]        cinstr_i

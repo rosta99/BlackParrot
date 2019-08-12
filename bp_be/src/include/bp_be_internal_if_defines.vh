@@ -14,6 +14,7 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic                                    compressed_v;                                         \
     logic [vaddr_width_mp-1:0]               pc;                                                   \
     logic                                    fe_exception_not_instr;                               \
     bp_fe_exception_code_e                   fe_exception_code;                                    \
@@ -34,6 +35,7 @@
   {                                                                                                \
     logic                                    v;                                                    \
     logic                                    poison;                                               \
+    logic                                    compressed_v;                                         \
     logic [vaddr_width_mp-1:0]               pc;                                                   \
     rv64_instr_s                             instr;                                                \
     bp_be_decode_s                           decode;                                               \
@@ -48,6 +50,7 @@
                                                                                                    \
   typedef struct packed                                                                            \
   {                                                                                                \
+    logic                              compressed_v;                                               \
     logic [vaddr_width_mp-1:0]         pc;                                                         \
     rv64_instr_s                       instr;                                                      \
                                                                                                    \
@@ -206,7 +209,8 @@
  *   and an unfortunate, necessary consequence of parameterized structs.
  */
 `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-  (vaddr_width_mp                                                                                  \
+  (1                                                                                               \
+   + vaddr_width_mp                                                                                \
    + 1                                                                                             \
    + $bits(bp_fe_exception_code_e)                                                                 \
    + branch_metadata_fwd_width_mp                                                                  \
@@ -214,9 +218,10 @@
    + 9                                                                                             \
    )
 
-`define bp_be_dispatch_pkt_width(vaddr_width_mp) \
-  (2                                                                                               \
+`define bp_be_dispatch_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp)                     \
+  (3                                                                                               \
    + vaddr_width_mp                                                                                \
+   + branch_metadata_fwd_width_mp                                                                  \
    + rv64_instr_width_gp                                                                           \
    + 3                                                                                             \
    + 3 * dpath_width_p                                                                             \
@@ -224,10 +229,11 @@
    )
 
 `define bp_be_pipe_stage_reg_width(vaddr_width_mp) \
-   (vaddr_width_mp                                                                                 \
-   + rv64_instr_width_gp                                                                           \
-   + 16                                                                                            \
-   )
+   (1                                                                                              \
+    + vaddr_width_mp                                                                               \
+    + rv64_instr_width_gp                                                                          \
+    + 16                                                                                           \
+    )
 
 `define bp_be_comp_stage_reg_width \
   ($bits(rv64_fflags_s) + dpath_width_p)

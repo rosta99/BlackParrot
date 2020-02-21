@@ -56,7 +56,7 @@ module bp_coherent_accelerator_complex
                                                  coh_noc_x_cord_width_p'(sac_x_dim_p+cc_x_dim_p)};
          if (cac_x_dim_p > 0)
            begin: node
-           bp_coherent_accelerator_tile_node
+           bp_cac_tile
              #(.bp_params_p(bp_params_p))
              accel_tile_node
                (.core_clk_i(core_clk_i)

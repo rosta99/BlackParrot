@@ -63,10 +63,9 @@ always_comb begin
   else
     // TODO: Coprocessor address space, figure out.  Probably striped by CCEs within the AC
      cce_id_o = (num_sacc_p > 1)  
-                ? paddr_i[bp_sv39_vaddr_width_gp-io_noc_did_width_p-1: bp_sv39_vaddr_width_gp-io_noc_did_width_p-1-`BSG_SAFE_CLOG2(num_sacc_p)]
+                ? paddr_i[bp_sv39_vaddr_width_gp-io_noc_did_width_p-1: bp_sv39_vaddr_width_gp-io_noc_did_width_p-`BSG_SAFE_CLOG2(num_sacc_p)]
                   % (cc_y_dim_p*cc_y_dim_p)
                 : '0;
-    //cce_id_o = '0;
 end
 
 endmodule

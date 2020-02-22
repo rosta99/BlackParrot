@@ -1,4 +1,3 @@
-
 module bp_sac_socket
  import bp_common_pkg::*;
  import bp_common_aviary_pkg::*;
@@ -92,7 +91,7 @@ module bp_sac_socket
 
      ,.io_cmd_i(io_cmd_i)
      ,.io_cmd_v_i(io_cmd_v_i)
-     ,.io_cmd_yumi_o(lce_io_cmd_yumi_lo)
+     ,.io_cmd_yumi_o(io_cmd_yumi_o)
 
      ,.io_resp_o(io_resp_o)
      ,.io_resp_v_o(io_resp_v_o)
@@ -124,7 +123,7 @@ module bp_sac_socket
      ,.lce_cmd_ready_i(cce_lce_cmd_ready_li)
 
      ,.io_cmd_o(io_cmd_o)
-     ,.io_cmd_v_o(cce_io_cmd_v_lo)
+     ,.io_cmd_v_o(io_cmd_v_o)
      ,.io_cmd_ready_i(io_cmd_ready_i)
 
      ,.io_resp_i(io_resp_i)
@@ -204,7 +203,7 @@ module bp_sac_socket
      ,.cord_dims_p(coh_noc_dims_p)
      ,.cord_markers_pos_p(coh_noc_cord_markers_pos_p)
      ,.len_width_p(coh_noc_len_width_p)
-     ,.routing_matrix_p(StrictYX | YX_Allow_W)
+     ,.routing_matrix_p(StrictYX | YX_Allow_E)
      ,.async_clk_p(async_coh_clk_p)
      ,.num_p(2)
      )

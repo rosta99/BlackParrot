@@ -47,7 +47,7 @@ module bp_sac_tile
   bp_cce_mem_msg_s cce_io_resp_li, lce_io_resp_lo;
   logic cce_io_resp_v_li, cce_io_resp_yumi_lo, lce_io_resp_v_lo, lce_io_resp_ready_li;
 
-  bp_streaming_accelerator_example
+  bp_sac_example
    #(.bp_params_p(bp_params_p)
      , .bp_enable_accelerator_p(bp_enable_accelerator_p)
      )

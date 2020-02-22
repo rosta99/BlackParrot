@@ -56,7 +56,7 @@ module bp_cac_tile
 
   logic [lce_id_width_p-1:0] lce_id_lo;
 
-  bp_coherent_accelerator_example
+  bp_cac_example
    #(.bp_params_p(bp_params_p)
      , .bp_enable_accelerator_p(bp_enable_accelerator_p)
      )

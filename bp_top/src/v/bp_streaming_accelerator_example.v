@@ -22,8 +22,6 @@ module bp_streaming_accelerator_example
    (
     input                                     clk_i
     , input                                   reset_i
-
-    , input [lce_id_width_p-1:0]              lce_id_i
     
     , input  [cce_mem_msg_width_lp-1:0]       io_cmd_i
     , input                                   io_cmd_v_i

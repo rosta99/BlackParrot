@@ -50,9 +50,9 @@ module bp_streaming_accelerator_complex
                                                   coh_noc_x_cord_width_p'(sac_x_dim_p-1)};
        if (sac_x_dim_p>0)
          begin : node
-           bp_streaming_accelerator_tile_node
+           bp_sac_tile
              #(.bp_params_p(bp_params_p))
-             accel_tile_node
+             sac_tile
                (.core_clk_i(core_clk_i)
                ,.core_reset_i(core_reset_i)
 

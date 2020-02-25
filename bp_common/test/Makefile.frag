@@ -5,6 +5,9 @@ BP_DEMOS = \
   accel_dp            \
   coherent_accel_dp   \
   streaming_accel_dp  \
+  quad_coherent_accel_dp\
+  dual_coherent_accel_dp\
+  quad_streaming_accel\
   basic_demo          \
   atomic_queue_demo_2 \
   atomic_queue_demo_4 \

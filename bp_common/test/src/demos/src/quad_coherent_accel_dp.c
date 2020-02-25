@@ -8,8 +8,8 @@ uint64_t main(uint64_t argc, char * argv[]) {
   uint64_t input_array_a [8];
   uint64_t input_array_b [8];
   uint64_t resp_data = 0, output_data=0;
-  uint64_t core_id;
   struct VDP_CSR vdp_csr;
+  uint64_t core_id;
   __asm__ volatile("csrr %0, mhartid": "=r"(core_id): :);   
   /////////////first call////////////
   if (core_id == 0){
@@ -39,22 +39,25 @@ uint64_t main(uint64_t argc, char * argv[]) {
     bp_hprint((uint8_t)(output_data>>i*8));
   }
 
-  ////////second call/////////////
-  for(i = 0; i < 8; ++i){
-    bp_hprint((uint8_t)(core_id>>i*8));
+
   }
-  
+  ////////second call/////////////
+  if (core_id == 1){
+
   vlen = 4;
-  //  int i;
+  int i;
   for(i = 0; i < vlen; ++i){
     input_array_a[i] = (i+1)*2;
     input_array_b[i] = (i+1)*5;
   }
 
+  vdp_csr.input_a_ptr = (uint64_t *) &input_array_a;
+  vdp_csr.input_b_ptr = (uint64_t *) &input_array_b;
   vdp_csr.input_length = vlen;
+  vdp_csr.resp_ptr =  (uint64_t *) &resp_data;
 
   //type:0, coherent 
-  bp_call_vector_dot_product_accelerator(0, vdp_csr);
+  bp_call_vector_add_accelerator(0, vdp_csr);
 
   output_data = resp_data * 16;
   
@@ -68,7 +71,14 @@ uint64_t main(uint64_t argc, char * argv[]) {
 
   }
 
-  
+  if (core_id > 1){
+    int i;
+    for(i = 0; i < 8;++i){
+      bp_hprint((uint8_t)(core_id>>i*8));
+    }
+
+  }
+
   bp_finish(0);
 
  /*int j;

@@ -19,9 +19,12 @@ void bp_finish(uint8_t code);
 #define BP_CFG_BASE_ADDR ((char *)(0x00200000))
 
 /////////////////////////accelerator_vector_dot_product////////////////////
-#define CACCEL_VDP_BASE_ADDR ((uint64_t *)(0x02000000))
-#define SACCEL_VDP_BASE_ADDR ((uint64_t *)(0x03000000))
-#define SACCEL_VDP_MEM_BASE ((uint64_t *)(0x1000000000))
+#define CACCEL_VDP_BASE_ADDR  ((uint64_t *)(0x04000000))
+#define CACCEL_VADD_BASE_ADDR ((uint64_t *)(0x05000000))
+#define SACCEL_VDP_BASE_ADDR  ((uint64_t *)(0x06000000))
+#define SACCEL_VADD_BASE_ADDR ((uint64_t *)(0x07000000))
+#define SACCEL_VDP_MEM_BASE   ((uint64_t *)(0x1000000000))
+#define SACCEL_VADD_MEM_BASE  ((uint64_t *)(0x1800000000))
 
 #define ACCEL_VPD_INPUT_A_PTR    0
 #define ACCEL_VPD_INPUT_B_PTR    1
@@ -51,5 +54,7 @@ void bp_vdp_config_accelerator(uint64_t *base_cfg_addr, uint64_t *input_a_ptr,
 void bp_vdp_accelerator_start_cmd(uint64_t *base_cfg_addr);
 void bp_vdp_wait_for_completion(uint64_t *base_cfg_addr);
 void bp_call_vector_dot_product_accelerator(uint8_t type, struct VDP_CSR vdp_csrs);
+void bp_call_vector_add_accelerator(uint8_t type, struct VDP_CSR vdp_csrs);
+
 
 #endif

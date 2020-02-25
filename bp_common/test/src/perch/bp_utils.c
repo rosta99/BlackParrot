@@ -130,3 +130,26 @@ void bp_call_vector_dot_product_accelerator(uint8_t type, struct VDP_CSR vdp_csr
   }
 }
 
+void bp_call_vector_add_accelerator(uint8_t type, struct VDP_CSR vdp_csrs){
+
+  uint64_t *cfg_base_addr;
+  cfg_base_addr = type ? SACCEL_VADD_BASE_ADDR : CACCEL_VADD_BASE_ADDR;
+
+  if(type){
+    mem_cpy(vdp_csrs.input_a_ptr, SACCEL_VADD_MEM_BASE, vdp_csrs.input_length);
+    mem_cpy(vdp_csrs.input_b_ptr, SACCEL_VADD_MEM_BASE+vdp_csrs.input_length, vdp_csrs.input_length);
+  }
+
+  uint64_t *src_vec_a, *src_vec_b, *result_vec;
+  src_vec_a =  type ? SACCEL_VADD_MEM_BASE : vdp_csrs.input_a_ptr;
+  src_vec_b =  type ? SACCEL_VADD_MEM_BASE+vdp_csrs.input_length : vdp_csrs.input_b_ptr;
+  result_vec = type ? SACCEL_VADD_MEM_BASE+2*vdp_csrs.input_length : vdp_csrs.resp_ptr;
+
+  bp_vdp_config_accelerator(cfg_base_addr, src_vec_a, src_vec_b, vdp_csrs.input_length, 0, result_vec, 1);
+  bp_vdp_accelerator_start_cmd(cfg_base_addr);
+  bp_vdp_wait_for_completion(cfg_base_addr);
+
+  if(type){
+    mem_cpy(result_vec, vdp_csrs.resp_ptr, vdp_csrs.input_length);
+  }
+}

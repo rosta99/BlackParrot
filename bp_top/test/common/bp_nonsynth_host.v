@@ -47,7 +47,7 @@ end
 // Host I/O mappings (arbitrarily decided for now)
 //   Overall host controls 32'h0300_0000-32'h03FF_FFFF
 
-localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
+localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0???);
 localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
 localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
 
@@ -91,7 +91,19 @@ bsg_decode_with_v
 
    ,.o(finish_w_v_li)
    );
+   
 
+logic [num_core_p-1:0] getchar_w_v_li;
+bsg_decode_with_v
+ #(.num_out_p(num_core_p))
+ getchar_data_cmd_decoder
+  (.v_i(getchar_data_cmd_v)
+   ,.i(io_cmd_core_enc)
+
+   ,.o(getchar_w_v_li)
+   );
+
+   
 logic [num_core_p-1:0] finish_r;
 bsg_dff_reset
  #(.width_p(num_core_p))
@@ -124,7 +136,7 @@ always_ff @(negedge clk_i)
           $write("%c", io_cmd_cast_i.data[0+:8]);
           $fflush(32'h8000_0001);
         end
-        if (getchar_data_cmd_v & io_cmd_yumi_o)
+        if (getchar_w_v_li[i] & getchar_data_cmd_v & io_cmd_yumi_o)
           //pop();
           $display("[CORE%0x PRT] %x", i, io_cmd_cast_i.data[0+:8]);
         if (finish_w_v_li[i] & io_cmd_yumi_o & ~io_cmd_cast_i.data[0])

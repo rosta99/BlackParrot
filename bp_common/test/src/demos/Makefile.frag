@@ -1,4 +1,5 @@
 BP_DEMOS_C = \
+  bs                    \
   basic_demo            \
   accel_dp              \
   coherent_accel_dp     \

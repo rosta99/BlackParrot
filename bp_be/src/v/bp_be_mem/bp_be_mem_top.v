@@ -96,8 +96,6 @@ module bp_be_mem_top
    , output                                  debug_mode_o
 
    , output [trap_pkt_width_lp-1:0]          trap_pkt_o
-   , output                                  tlb_fence_o
-   , output                                  fencei_o
    );
 
 `declare_bp_fe_be_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
@@ -114,6 +112,7 @@ bp_be_csr_cmd_s        csr_cmd;
 bp_be_mem_resp_s       mem_resp;
 bp_be_mmu_vaddr_s      mmu_cmd_vaddr;
 bp_be_commit_pkt_s     commit_pkt;
+bp_be_trap_pkt_s       trap_pkt;
 
 assign cfg_bus = cfg_bus_i;
 assign mmu_cmd = mmu_cmd_i;
@@ -121,6 +120,7 @@ assign csr_cmd = csr_cmd_i;
 
 assign mem_resp_o = mem_resp;
 assign commit_pkt = commit_pkt_i;
+assign trap_pkt_o = trap_pkt;
 
 // Suppress unused signal warnings
 wire unused0 = mem_resp_ready_i;
@@ -197,7 +197,6 @@ bsg_dff_chain
 
 bp_be_ecode_dec_s exception_ecode_dec_li;
 
-wire bubble_v_li    = commit_pkt.bubble_v;
 wire exception_v_li = commit_pkt.v | ptw_page_fault_v;
 wire [vaddr_width_p-1:0] exception_pc_li = ptw_page_fault_v ? fault_pc : commit_pkt.pc;
 wire [vaddr_width_p-1:0] exception_npc_li = commit_pkt.npc;
@@ -244,7 +243,6 @@ bp_be_csr
    ,.hartid_i(cfg_bus.core_id)
    ,.instret_i(commit_pkt.instret)
 
-   ,.bubble_v_i(bubble_v_li)
    ,.exception_v_i(exception_v_li)
    ,.exception_pc_i(exception_pc_li)
    ,.exception_npc_i(exception_npc_li)
@@ -260,13 +258,11 @@ bp_be_csr
    ,.single_step_o(single_step_o)
 
    ,.priv_mode_o(priv_mode_lo)
-   ,.trap_pkt_o(trap_pkt_o)
+   ,.trap_pkt_o(trap_pkt)
    ,.satp_ppn_o(satp_ppn_lo)
    ,.translation_en_o(translation_en_lo)
    ,.mstatus_sum_o(mstatus_sum_lo)
    ,.mstatus_mxr_o(mstatus_mxr_lo)
-   ,.tlb_fence_o(tlb_fence_o)
-   ,.fencei_o(fencei_o)
 
    ,.itlb_fill_o(itlb_fill_lo)
    ,.instr_page_fault_o(instr_page_fault_lo)
@@ -282,7 +278,7 @@ bp_tlb
   dtlb
   (.clk_i(clk_i)
    ,.reset_i(reset_i)
-   ,.flush_i(tlb_fence_o)
+   ,.flush_i(trap_pkt.sfence)
    ,.translation_en_i(translation_en_lo)
 
    ,.v_i(dtlb_r_v | dtlb_w_v)
@@ -485,9 +481,13 @@ assign itlb_fill_vaddr_o = fault_vaddr;
 assign itlb_fill_entry_o = ptw_tlb_w_entry;
 
 // synopsys translate_off
+bp_be_mmu_cmd_s mmu_cmd_r;
+always_ff @(posedge clk_i)
+  mmu_cmd_r <= mmu_cmd;
+
 always_ff @(negedge clk_i)
   begin
-    assert (~(dtlb_r_v_lo & dcache_uncached & mmu_cmd.mem_op inside {e_lrw, e_lrd, e_scw, e_scd}))
+    assert (~(mmu_cmd_v_r & dtlb_r_v_lo & dcache_uncached & (mmu_cmd_r.mem_op inside {e_lrw, e_lrd, e_scw, e_scd})))
       else $warning("LR/SC to uncached memory not supported");
   end
 // synopsys translate_on

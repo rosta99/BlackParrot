@@ -130,6 +130,12 @@ assign program_finish_o = finish_r;
 
 always_ff @(negedge clk_i)
   begin
+    if (putchar_data_cmd_v & io_cmd_yumi_o) begin
+      $write("%c", io_cmd_cast_i.data[0+:8]);
+      $fflush(32'h8000_0001);
+    end
+    if (getchar_data_cmd_v & io_cmd_yumi_o)
+      pop();
     for (integer i = 0; i < num_core_p; i++)
       begin
         if (putchar_data_cmd_v & io_cmd_yumi_o) begin

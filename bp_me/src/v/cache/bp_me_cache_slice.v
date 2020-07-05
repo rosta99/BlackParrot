@@ -79,6 +79,7 @@ module bp_me_cache_slice
      ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
      ,.sets_p(l2_sets_p)
      ,.ways_p(l2_assoc_p)
+     ,.amo_support_p(amo_support_level_arithmetic_lp)
      )
    cache
     (.clk_i(clk_i)

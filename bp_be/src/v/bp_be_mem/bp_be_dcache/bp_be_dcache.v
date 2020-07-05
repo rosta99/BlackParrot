@@ -705,8 +705,22 @@ module bp_be_dcache
      ,.data_o(cache_req_metadata_v_o)
      );
 
-  assign cache_req_metadata_cast_o.repl_way = lru_way_li;
-  assign cache_req_metadata_cast_o.dirty = stat_mem_data_lo.dirty[lru_way_li];
+  logic hit_tv_r, amo_req_r;
+  logic [lg_dcache_assoc_lp-1:0] hit_way_r;
+
+  bsg_dff_reset
+   #(.width_p(2+lg_dcache_assoc_lp))
+   hit_way_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i({amo_req, load_hit_tv, load_hit_way_tv})
+     ,.data_o({amo_req_r, hit_tv_r, hit_way_r})
+    );
+
+  assign cache_req_metadata_cast_o.hit_or_repl_way = amo_req_r ? hit_way_r : lru_way_li;
+  assign cache_req_metadata_cast_o.hit_or_repl = amo_req_r ? hit_tv_r : '0;
+  assign cache_req_metadata_cast_o.dirty = amo_req_r ? stat_mem_data_lo.dirty[hit_way_r] : stat_mem_data_lo.dirty[lru_way_li];
 
   // output stage
   // Cache Miss Tracking logic
@@ -851,7 +865,7 @@ module bp_be_dcache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, bypass_data_masked})
-    ,.sel_i(uncached_tv_r)
+    ,.sel_i(uncached_tv_r | amo_req)
     ,.data_o(result_data)
   );
 
@@ -1021,7 +1035,7 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~poison_i & ~decode_tv_r.l2_op) | stat_mem_pkt_yumi_o;
+  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~dcache_tv_r.fencei_op & ~poison_i) | stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = stat_mem_pkt_yumi_o
     ? (stat_mem_pkt.opcode != e_cache_stat_mem_read)
     : ~miss_tv & ~decode_tv_r.l2_op;

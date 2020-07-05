@@ -88,6 +88,7 @@ module bp_uce
   `declare_bp_cache_service_if(paddr_width_p, ptag_width_p, sets_p, assoc_p, dword_width_p, block_width_p, fill_width_p, cache);
 
   `bp_cast_i(bp_cache_req_s, cache_req);
+  `bp_cast_i(bp_cache_req_metadata_s, cache_req_metadata);
   `bp_cast_o(bp_cache_tag_mem_pkt_s, tag_mem_pkt);
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_o(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
@@ -247,7 +248,7 @@ module bp_uce
      );
 
   // We can do a little better by sending the read_request before the writeback
-  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_req, e_uc_read_wait} state_n, state_r;
+  enum logic [4:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_amo_tag_inval, e_amo_data_writeback, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_req, e_uc_read_wait, e_amo_op_wait} state_n, state_r;
   wire is_reset         = (state_r == e_reset);
   wire is_clear         = (state_r == e_clear);
   wire is_flush_read    = (state_r == e_flush_read);
@@ -270,11 +271,18 @@ module bp_uce
 
   wire store_resp_v_li    = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_mem_msg_wr, e_mem_msg_uc_wr};
   wire load_resp_v_li     = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_mem_msg_rd, e_mem_msg_uc_rd};
+  wire amo_op_resp_v_li   = mem_resp_v_i & mem_resp_cast_i.header.msg_type inside {e_cce_mem_amo_swap, e_cce_mem_amo_add, e_cce_mem_amo_xor
+                                                                                   , e_cce_mem_amo_and, e_cce_mem_amo_or, e_cce_mem_amo_min
+                                                                                   , e_cce_mem_amo_max, e_cce_mem_amo_minu, e_cce_mem_amo_maxu};
 
   wire miss_load_v_li  = cache_req_v_r & cache_req_r.msg_type inside {e_miss_load};
   wire miss_store_v_li = cache_req_v_r & cache_req_r.msg_type inside {e_miss_store};
   wire miss_v_li       = miss_load_v_li | miss_store_v_li;
   wire uc_load_v_li    = cache_req_v_r & cache_req_r.msg_type inside {e_uc_load};
+  wire amo_op_v_li     = cache_req_v_i & cache_req_cast_i.msg_type inside {e_amo_swap, e_amo_add, e_amo_xor, e_amo_and, e_amo_or
+                                                                      , e_amo_min, e_amo_max, e_amo_minu, e_amo_maxu};
+  wire amo_op_v_r      = cache_req_v_r & cache_req_r.msg_type inside {e_amo_swap, e_amo_add, e_amo_xor, e_amo_and, e_amo_or
+                                                                      , e_amo_min, e_amo_max, e_amo_minu, e_amo_maxu};
 
   // When fill_width_p < block_width_p, multicycle fill and writeback is implemented in cache flush write,
   // cache miss load with and without dirty data writeback.
@@ -571,11 +579,63 @@ module bp_uce
                 state_n = cache_req_v_i
                           ? flush_v_li
                             ? e_flush_read
-                            : clear_v_li
-                              ? e_clear
-                              : e_send_critical
+                            : amo_op_v_li
+                              ? e_amo_tag_inval
+                              : clear_v_li
+                                ? e_clear
+                                : e_send_critical
                           : e_ready;
               end
+          end
+        e_amo_tag_inval:
+          begin
+            if (cache_req_metadata_cast_i.hit_or_repl)
+              begin
+                if (cache_req_metadata_cast_i.dirty)
+                  begin
+                    tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_invalidate;
+                    tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+                    tag_mem_pkt_cast_o.way_id  = cache_req_metadata_cast_i.hit_or_repl_way;
+                    tag_mem_pkt_v_o = 1'b1;
+
+                    data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
+                    data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+                    data_mem_pkt_cast_o.way_id = cache_req_metadata_cast_i.hit_or_repl_way;
+                    data_mem_pkt_v_o = 1'b1;
+                    data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
+                    
+                    stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
+                    stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+                    stat_mem_pkt_v_o = 1'b1;
+
+                    state_n = (tag_mem_pkt_yumi_i & data_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_amo_data_writeback : e_amo_tag_inval;
+                  end
+                else
+                  begin
+                    tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_invalidate;
+                    tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
+                    tag_mem_pkt_cast_o.way_id  = cache_req_metadata_cast_i.hit_or_repl_way;
+                    tag_mem_pkt_v_o = 1'b1;
+
+                    state_n = tag_mem_pkt_yumi_i ? e_send_critical : e_amo_tag_inval;
+                  end
+              end
+            else
+              state_n = e_send_critical;
+          end
+        e_amo_data_writeback:
+          begin
+            mem_cmd_cast_o.header.msg_type = e_mem_msg_wr;
+            mem_cmd_cast_o.header.addr     = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
+            mem_cmd_cast_o.header.size     = block_msg_size_lp;
+            mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
+            mem_cmd_cast_o.data                  = writeback_data;
+            mem_cmd_v_o = mem_cmd_ready_i;
+            mem_cmd_up = mem_cmd_v_o;
+
+            state_n = (mem_cmd_done & mem_cmd_v_o)
+                        ? e_send_critical
+                        : e_amo_data_writeback;
           end
         e_send_critical:
           if (miss_v_li)
@@ -602,6 +662,35 @@ module bp_uce
               mem_cmd_v_o = mem_cmd_ready_i;
 
               state_n = mem_cmd_v_o ? e_uc_read_wait : e_send_critical;
+            end
+          else if (amo_op_v_r)
+            begin
+              mem_cmd_cast_o.header.msg_type       = (cache_req_r.msg_type == e_amo_swap)
+                                                     ? e_cce_mem_amo_swap
+                                                     : (cache_req_r.msg_type == e_amo_add)
+                                                       ? e_cce_mem_amo_add
+                                                       : (cache_req_r.msg_type == e_amo_xor)
+                                                         ? e_cce_mem_amo_xor
+                                                         : (cache_req_r.msg_type == e_amo_and)
+                                                           ? e_cce_mem_amo_and
+                                                           : (cache_req_r.msg_type == e_amo_or)
+                                                             ? e_cce_mem_amo_or
+                                                             : (cache_req_r.msg_type == e_amo_min)
+                                                               ? e_cce_mem_amo_min
+                                                               : (cache_req_r.msg_type == e_amo_max)
+                                                                 ? e_cce_mem_amo_max
+                                                                 : (cache_req_r.msg_type == e_amo_minu)
+                                                                   ? e_cce_mem_amo_minu
+                                                                   : (cache_req_r.msg_type == e_amo_maxu)
+                                                                     ? e_cce_mem_amo_maxu
+                                                                     : e_cce_mem_amo_swap;
+              mem_cmd_cast_o.header.addr           = cache_req_r.addr;
+              mem_cmd_cast_o.header.size           = (cache_req_r.size == e_size_4B) ? e_mem_msg_size_4 : e_mem_msg_size_8;
+              mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
+              mem_cmd_cast_o.data                  = cache_req_r.data;
+              mem_cmd_v_o = mem_cmd_ready_i;
+
+              state_n = mem_cmd_v_o ? e_amo_op_wait : e_send_critical;
             end
         e_writeback_evict:
           begin
@@ -711,6 +800,17 @@ module bp_uce
             mem_resp_yumi_lo = cache_req_complete_o;
 
             state_n = cache_req_complete_o ? e_ready : e_uc_read_wait;
+          end
+        e_amo_op_wait:
+          begin
+            data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
+            data_mem_pkt_cast_o.data = mem_resp_cast_i.data;
+            data_mem_pkt_v_o = amo_op_resp_v_li;
+
+            cache_req_complete_o = data_mem_pkt_yumi_i;
+            mem_resp_yumi_lo = cache_req_complete_o;
+
+            state_n = cache_req_complete_o ? e_ready : e_amo_op_wait;
           end
         default: state_n = e_reset;
       endcase

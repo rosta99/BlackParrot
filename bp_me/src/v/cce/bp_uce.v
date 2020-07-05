@@ -574,7 +574,7 @@ module bp_uce
               mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
               mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], block_offset_width_lp'(0)};
               mem_cmd_cast_o.header.size           = block_msg_size_lp;
-              mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
+              mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
               mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
               mem_cmd_v_o = mem_cmd_ready_i & cache_req_metadata_v_r;
               mem_cmd_up = mem_cmd_v_o;
@@ -598,18 +598,18 @@ module bp_uce
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
             data_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-            data_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
+            data_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
             data_mem_pkt_cast_o.fill_index = {block_size_in_fill_lp{1'b1}};
             data_mem_pkt_v_o = 1'b1;
 
             tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_read;
             tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-            tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.repl_way;
+            tag_mem_pkt_cast_o.way_id  = cache_req_metadata_r.hit_or_repl_way;
             tag_mem_pkt_v_o = 1'b1;
 
             stat_mem_pkt_cast_o.opcode = e_cache_stat_mem_clear_dirty;
             stat_mem_pkt_cast_o.index  = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
-            stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.repl_way;
+            stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
             stat_mem_pkt_v_o = 1'b1;
 
             state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_read_req : e_writeback_evict;
@@ -639,7 +639,7 @@ module bp_uce
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size           = block_msg_size_lp;
-            mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
+            mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r;
             mem_cmd_up = mem_cmd_v_o;
@@ -684,7 +684,7 @@ module bp_uce
             mem_cmd_cast_o.header.msg_type       = e_cce_mem_rd;
             mem_cmd_cast_o.header.addr           = {cache_req_r.addr[paddr_width_p-1:block_offset_width_lp], bank_index, byte_offset_width_lp'(0)};
             mem_cmd_cast_o.header.size           = block_msg_size_lp;
-            mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.repl_way);
+            mem_cmd_cast_o.header.payload.way_id = lce_assoc_p'(cache_req_metadata_r.hit_or_repl_way);
             mem_cmd_cast_o.header.payload.lce_id = lce_id_i;
             mem_cmd_v_o = mem_cmd_ready_i & ~mem_cmd_done_r;
             mem_cmd_up = mem_cmd_v_o;

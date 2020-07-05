@@ -235,7 +235,7 @@ module bp_lce_req
         // send when port is ready and metadata has arrived
         lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
 
-        lce_req.header.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.repl_way);
+        lce_req.header.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.hit_or_repl_way);
         lce_req.header.addr = cache_req_r.addr;
         lce_req.header.size = req_block_size_lp;
         lce_req.header.addr = cache_req_r.addr;

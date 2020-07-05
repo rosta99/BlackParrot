@@ -208,6 +208,60 @@ module bp_me_cce_to_cache
               ,e_mem_msg_size_64: cache_pkt.opcode = SM;
               default: cache_pkt.opcode = LB;
             endcase
+          e_cce_mem_amo_swap:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOSWAP_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOSWAP_D;
+              default: cache_pkt.opcode = AMOSWAP_D;
+            endcase
+          e_cce_mem_amo_add:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOADD_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOADD_D;
+              default: cache_pkt.opcode = AMOADD_D;
+            endcase
+          e_cce_mem_amo_xor:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOXOR_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOXOR_D;
+              default: cache_pkt.opcode = AMOXOR_D;
+            endcase
+          e_cce_mem_amo_and:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOAND_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOAND_D;
+              default: cache_pkt.opcode = AMOAND_D;
+            endcase
+          e_cce_mem_amo_or:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOOR_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOOR_D;
+              default: cache_pkt.opcode = AMOOR_D;
+            endcase
+          e_cce_mem_amo_min:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOMIN_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOMIN_D;
+              default: cache_pkt.opcode = AMOMIN_D;
+            endcase
+          e_cce_mem_amo_max:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOMAX_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOMAX_D;
+              default: cache_pkt.opcode = AMOMAX_D;
+            endcase
+          e_cce_mem_amo_minu:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOMINU_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOMINU_D;
+              default: cache_pkt.opcode = AMOMINU_D;
+            endcase
+          e_cce_mem_amo_maxu:
+            case (mem_cmd_lo.header.size)
+              e_mem_msg_size_4: cache_pkt.opcode = AMOMAXU_W;
+              e_mem_msg_size_8: cache_pkt.opcode = AMOMAXU_D;
+              default: cache_pkt.opcode = AMOMAXU_D;
+            endcase
           default: cache_pkt.opcode = LB;
         endcase
 

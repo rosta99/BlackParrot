@@ -248,7 +248,7 @@ module bp_uce
      );
 
   // We can do a little better by sending the read_request before the writeback
-  enum logic [4:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_amo_tag_inval, e_amo_data_writeback, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_req, e_uc_read_wait, e_amo_op_wait} state_n, state_r;
+  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_amo_tag_inval, e_amo_data_writeback, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_req, e_uc_read_wait} state_n, state_r;
   wire is_reset         = (state_r == e_reset);
   wire is_clear         = (state_r == e_clear);
   wire is_flush_read    = (state_r == e_flush_read);
@@ -690,7 +690,7 @@ module bp_uce
               mem_cmd_cast_o.data                  = cache_req_r.data;
               mem_cmd_v_o = mem_cmd_ready_i;
 
-              state_n = mem_cmd_v_o ? e_amo_op_wait : e_send_critical;
+              state_n = mem_cmd_v_o ? e_uc_read_wait : e_send_critical;
             end
         e_writeback_evict:
           begin
@@ -794,23 +794,12 @@ module bp_uce
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
             data_mem_pkt_cast_o.data = mem_resp_cast_i.data;
-            data_mem_pkt_v_o = load_resp_v_li;
+            data_mem_pkt_v_o = load_resp_v_li | amo_op_resp_v_li;
 
             cache_req_complete_o = data_mem_pkt_yumi_i;
             mem_resp_yumi_lo = cache_req_complete_o;
 
             state_n = cache_req_complete_o ? e_ready : e_uc_read_wait;
-          end
-        e_amo_op_wait:
-          begin
-            data_mem_pkt_cast_o.opcode = e_cache_data_mem_amo;
-            data_mem_pkt_cast_o.data = mem_resp_cast_i.data;
-            data_mem_pkt_v_o = amo_op_resp_v_li;
-
-            cache_req_complete_o = data_mem_pkt_yumi_i;
-            mem_resp_yumi_lo = cache_req_complete_o;
-
-            state_n = cache_req_complete_o ? e_ready : e_amo_op_wait;
           end
         default: state_n = e_reset;
       endcase

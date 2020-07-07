@@ -760,6 +760,7 @@ module bp_be_dcache
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
 
   assign early_v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
+                              | (decode_tv_r.store_op & decode_tv_r.l2_op & uncached_load_data_v_r))
                               | (uncached_tv_r & ~decode_tv_r.l2_op & (decode_tv_r.store_op & cache_req_ready_i))
                               | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
                               // Always send fencei when coherent

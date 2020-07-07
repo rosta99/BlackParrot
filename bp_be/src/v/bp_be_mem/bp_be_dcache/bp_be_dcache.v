@@ -441,7 +441,7 @@ module bp_be_dcache
   // Fail if we have a store conditional without success
   assign sc_fail     = v_tv_r & decode_tv_r.sc_op & ~sc_success;
   assign uncached_load_req = v_tv_r & decode_tv_r.load_op & uncached_tv_r & ~uncached_load_data_v_r;
-  assign uncached_store_req = v_tv_r & decode_tv_r.store_op & uncached_tv_r;
+  assign uncached_store_req = v_tv_r & decode_tv_r.store_op & uncached_tv_r & ~decode_tv_r.l2_op;
   assign fencei_req = v_tv_r & decode_tv_r.fencei_op;
 
   // write buffer
@@ -735,7 +735,7 @@ module bp_be_dcache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i({amo_req, load_hit_tv, load_hit_way_tv})
+     ,.data_i({l2_amo_req, load_hit_tv, load_hit_way_tv})
      ,.data_o({amo_req_r, hit_tv_r, hit_way_r})
     );
 
@@ -760,7 +760,7 @@ module bp_be_dcache
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
 
   assign early_v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
-                              | (uncached_tv_r & (decode_tv_r.store_op & cache_req_ready_i))
+                              | (uncached_tv_r & ~decode_tv_r.l2_op & (decode_tv_r.store_op & cache_req_ready_i))
                               | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
                               // Always send fencei when coherent
                               | (fencei_req & (~gdirty_r | (l1_coherent_p == 1)))
@@ -878,7 +878,7 @@ module bp_be_dcache
     ,.els_p(2)
   ) final_data_mux (
     .data_i({uncached_load_data_r, bypass_data_masked})
-    ,.sel_i(uncached_tv_r | amo_req)
+    ,.sel_i(uncached_tv_r)
     ,.data_o(result_data)
   );
 
@@ -1091,7 +1091,7 @@ module bp_be_dcache
 
   // stat_mem
   //
-  assign stat_mem_v_li = (v_tv_r & ~uncached_tv_r & ~decode_tv_r.fencei_op & ~flush_i & ~decode_tv_r.l2_op) | stat_mem_pkt_yumi_o;
+  assign stat_mem_v_li = (v_tv_r & ~(uncached_tv_r & ~decode_tv_r.l2_op) & ~decode_tv_r.fencei_op & ~flush_i) | stat_mem_pkt_yumi_o;
   assign stat_mem_w_li = stat_mem_pkt_yumi_o
     ? (stat_mem_pkt.opcode != e_cache_stat_mem_read)
     : ~miss_tv & ~decode_tv_r.l2_op;

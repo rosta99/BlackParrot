@@ -593,9 +593,10 @@ module bp_uce
               begin
                 if (cache_req_metadata_cast_i.dirty)
                   begin
-                    tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_invalidate;
+                    tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_set_state;
                     tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
                     tag_mem_pkt_cast_o.way_id  = cache_req_metadata_cast_i.hit_or_repl_way;
+                    tag_mem_pkt_cast_o.state   = e_COH_I;
                     tag_mem_pkt_v_o = 1'b1;
 
                     data_mem_pkt_cast_o.opcode = e_cache_data_mem_read;
@@ -612,9 +613,10 @@ module bp_uce
                   end
                 else
                   begin
-                    tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_invalidate;
+                    tag_mem_pkt_cast_o.opcode  = e_cache_tag_mem_set_state;
                     tag_mem_pkt_cast_o.index   = cache_req_r.addr[block_offset_width_lp+:index_width_lp];
                     tag_mem_pkt_cast_o.way_id  = cache_req_metadata_cast_i.hit_or_repl_way;
+                    tag_mem_pkt_cast_o.state   = e_COH_I;
                     tag_mem_pkt_v_o = 1'b1;
 
                     state_n = tag_mem_pkt_yumi_i ? e_send_critical : e_amo_tag_inval;

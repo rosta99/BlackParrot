@@ -328,6 +328,7 @@ module bp_be_dcache
   logic [lg_dcache_assoc_lp-1:0] store_hit_way_tv;
   logic load_hit_tv;
   logic store_hit_tv;
+  logic no_return_req;
 
   // fencei does not require a ptag
   assign tv_we = v_tl_r & (ptag_v_i | decode_tl_r.fencei_op);
@@ -348,7 +349,7 @@ module bp_be_dcache
       // We poison the valid of the stage rather than tl_we, to relieve critical paths on the
       //   large memory enables. The tradeoff is an additional toggle whenever there is a flush
       //   during an incoming dcache request
-      v_tv_r <= tv_we & ~poison_i;
+      v_tv_r <= tv_we & ~poison_i & ~no_return_req;
 
       if (tv_we) begin
         decode_tv_r <= decode_tl_r;
@@ -393,6 +394,8 @@ module bp_be_dcache
   wire amominu_req = v_tv_r & decode_tv_r.amominu_op;
   wire amomaxu_req = v_tv_r & decode_tv_r.amomaxu_op;
   wire l2_amo_req  = v_tv_r & decode_tv_r.l2_op;
+
+  assign no_return_req = v_tv_r & decode_tv_r.no_return;
 
   // Uncached and L2 atomic refactor
   logic uncached_load_data_v_r;
@@ -653,28 +656,50 @@ module bp_be_dcache
     end
     else if (l2_amo_req & ~uncached_load_data_v_r) begin
       cache_req_v_o = cache_req_ready_i;
-      unique if (lr_req)
-        cache_req_cast_o.msg_type = e_amo_lr;
-      else if (sc_req)
+      unique if (lr_req) begin
+        cache_req_cast_o.msg_type  = e_amo_lr;
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (sc_req) begin
         cache_req_cast_o.msg_type = e_amo_sc;
-      else if (amoswap_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amoswap_req) begin
         cache_req_cast_o.msg_type = e_amo_swap;
-      else if (amoadd_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amoadd_req) begin
         cache_req_cast_o.msg_type = e_amo_add;
-      else if (amoxor_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amoxor_req) begin
         cache_req_cast_o.msg_type = e_amo_xor;
-      else if (amoand_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amoand_req) begin
         cache_req_cast_o.msg_type = e_amo_and;
-      else if (amoor_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amoor_req) begin
         cache_req_cast_o.msg_type = e_amo_or;
-      else if (amomin_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amomin_req) begin
         cache_req_cast_o.msg_type = e_amo_min;
-      else if (amomax_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amomax_req) begin
         cache_req_cast_o.msg_type = e_amo_max;
-      else if (amominu_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amominu_req) begin
         cache_req_cast_o.msg_type = e_amo_minu;
-      else if (amomaxu_req)
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
+      else if (amomaxu_req) begin
         cache_req_cast_o.msg_type = e_amo_maxu;
+        cache_req_cast_o.no_return = decode_tv_r.no_return;
+      end
     end
     else if(uncached_load_req) begin
       cache_req_cast_o.msg_type = e_uc_load;
@@ -732,15 +757,15 @@ module bp_be_dcache
      ,.reset_i(reset_i)
 
      // We don't wait for ack on uncached stores or writethrough requests
-     ,.set_i(cache_req_v_o & ~uncached_store_req & ~wt_req)
+     ,.set_i(cache_req_v_o & ~uncached_store_req & ~wt_req & ~no_return_req)
      ,.clear_i(cache_req_complete_i)
      ,.data_o(cache_miss_r)
      );
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
   assign dcache_miss_o = cache_miss_r || (v_tv_r & ~v_o);
 
-  assign v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & uncached_load_data_v_r))
-                         | (decode_tv_r.store_op & decode_tv_r.l2_op & uncached_load_data_v_r)
+  assign v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & (uncached_load_data_v_r | decode_tv_r.no_return)))
+                         | (decode_tv_r.store_op & decode_tv_r.l2_op & (uncached_load_data_v_r | decode_tv_r.no_return))
                          | (uncached_tv_r & ~decode_tv_r.l2_op & (decode_tv_r.store_op & cache_req_ready_i))
                          | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
                          // Always send fencei when coherent
@@ -899,7 +924,7 @@ module bp_be_dcache
     ,.data_o(load_data)
   );
 
-  assign data_o = (decode_tv_r.load_op | (sc_req & decode_tv_r.l2_op))
+  assign data_o = ((decode_tv_r.load_op | (sc_req & decode_tv_r.l2_op)) & ~decode_tv_r.no_return)
                   ? load_data
                   : decode_tv_r.sc_op & ~sc_success;
 

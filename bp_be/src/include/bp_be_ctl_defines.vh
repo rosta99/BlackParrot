@@ -169,6 +169,7 @@ typedef struct packed
   logic                             serial_v;
   logic                             fp_not_int_v;
   logic                             opw_v;
+  logic                             no_amo_return;
 
   bp_be_fu_op_s                     fu_op;
 

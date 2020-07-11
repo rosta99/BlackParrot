@@ -76,6 +76,7 @@ module bp_be_instr_decoder
       // Decode metadata
       decode.fp_not_int_v  = '0;
       decode.opw_v         = '0;
+      decode.no_amo_return = '0;
 
       // Decode control signals
       decode.fu_op         = bp_be_fu_op_s'(0);
@@ -287,6 +288,9 @@ module bp_be_instr_decoder
                 begin
                   if (lr_sc_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_lrw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -295,6 +299,9 @@ module bp_be_instr_decoder
                 begin
                   if (lr_sc_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_scw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -303,6 +310,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_swap_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoswapw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -311,6 +321,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoaddw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -319,6 +332,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_logic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoxorw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -327,6 +343,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_logic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoandw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -335,6 +354,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_logic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoorw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -343,6 +365,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amominw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -351,6 +376,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amomaxw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -359,6 +387,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amominuw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -367,6 +398,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amomaxuw;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -375,6 +409,9 @@ module bp_be_instr_decoder
                 begin
                   if (lr_sc_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_lrd;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -383,6 +420,9 @@ module bp_be_instr_decoder
                 begin
                   if (lr_sc_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_scd;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -391,6 +431,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_swap_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoswapd;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -399,6 +442,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoaddd;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -407,6 +453,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_logic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoxord;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -415,6 +464,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_logic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoandd;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -423,6 +475,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_logic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amoord;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -431,6 +486,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amomind;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -439,6 +497,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amomaxd;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -447,6 +508,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amominud;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end
@@ -455,6 +519,9 @@ module bp_be_instr_decoder
                 begin
                   if (amo_fetch_arithmetic_p != e_none) begin
                     decode.fu_op = e_dcache_opcode_amomaxud;
+                    if (instr.rd_addr == '0) begin
+                      decode.no_amo_return = 1'b1;
+                    end
                   end else begin
                     illegal_instr = 1'b1;
                   end

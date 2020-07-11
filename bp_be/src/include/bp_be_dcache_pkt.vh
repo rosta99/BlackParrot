@@ -11,12 +11,13 @@
 
 `define declare_bp_be_dcache_pkt_s(page_offset_width_mp, data_width_mp) \
   typedef struct packed {                                      \
-    bp_be_dcache_fu_op_e opcode;                              \
+    bp_be_dcache_fu_op_e opcode;                               \
     logic [page_offset_width_mp-1:0] page_offset;              \
+    logic no_amo_return;                                       \
     logic [data_width_mp-1:0] data;                            \
   } bp_be_dcache_pkt_s
 
 `define bp_be_dcache_pkt_width(page_offset_width_mp, data_width_mp) \
-  ($bits(bp_be_dcache_fu_op_e)+page_offset_width_mp+data_width_mp)
+  ($bits(bp_be_dcache_fu_op_e)+page_offset_width_mp+1+data_width_mp)
 
 `endif

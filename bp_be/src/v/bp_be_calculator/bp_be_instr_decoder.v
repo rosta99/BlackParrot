@@ -82,6 +82,7 @@ module bp_be_instr_decoder
       // Decode metadata
       decode.opw_v         = '0;
       decode.ops_v         = '0;
+      decode.no_amo_return = '0;
 
       // Decode control signals
       decode.fu_op         = bp_be_fu_op_s'(0);
@@ -541,6 +542,9 @@ module bp_be_instr_decoder
             decode.dcache_r_v = ~(instr inside {`RV64_SCD, `RV64_SCW});
             decode.dcache_w_v = ~(instr inside {`RV64_LRD, `RV64_LRW});
             decode.mem_v      = 1'b1;
+            if (instr.rd_addr == '0) begin
+              decode.no_amo_return = 1'b1;
+            end
             // Note: could do a more efficent decoding here by having atomic be a flag
             //   And having the op simply taken from funct3
             unique casez (instr)

@@ -32,9 +32,10 @@
     logic byte_op;                                                                 \
     logic fencei_op;                                                               \
     logic l2_op;                                                                   \
+    logic no_return;                                                               \
   } bp_be_dcache_pipeline_s;
 
 `define bp_be_dcache_pipeline_struct_width                                         \
-  (2 + 1 + 1 + 11 + 4 + 1 + 1)
+  (2 + 1 + 1 + 11 + 4 + 1 + 1 + 1)
 
 `endif

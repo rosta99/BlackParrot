@@ -433,7 +433,7 @@ module bp_uce
 
   // We ack mem_resps for uncached stores no matter what, so mem_resp_yumi_lo is for other responses
   logic mem_resp_yumi_lo;
-  assign mem_resp_yumi_o = mem_resp_yumi_lo | store_resp_v_li;
+  assign mem_resp_yumi_o = mem_resp_yumi_lo | store_resp_v_li | (amo_op_resp_v_li & cache_req_r.no_return);
   always_comb
     begin
       cache_req_ready_o = '0;

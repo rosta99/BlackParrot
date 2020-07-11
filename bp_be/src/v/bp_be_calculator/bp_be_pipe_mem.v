@@ -356,9 +356,10 @@ module bp_be_pipe_mem
       else begin
         dcache_pkt_v = v_i & (decode.pipe_mem_early_v | decode.pipe_mem_final_v);
         // TODO: Use dcache opcode directly
-        dcache_pkt.opcode      = bp_be_dcache_fu_op_e'(decode.fu_op);
-        dcache_pkt.page_offset = eaddr[0+:page_offset_width_p];
-        dcache_pkt.data        = rs2;
+        dcache_pkt.opcode        = bp_be_dcache_fu_op_e'(decode.fu_op);
+        dcache_pkt.page_offset   = eaddr[0+:page_offset_width_p];
+        dcache_pkt.no_amo_return = decode.no_amo_return;
+        dcache_pkt.data          = rs2;
         dcache_ptag = dtlb_r_entry.ptag;
         dcache_ptag_v = dtlb_r_v_lo
                         & ~(load_page_fault_v | store_page_fault_v)

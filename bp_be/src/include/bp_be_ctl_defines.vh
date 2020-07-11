@@ -219,6 +219,7 @@ typedef struct packed
   logic                             mem_v;
   logic                             opw_v;
   logic                             ops_v;
+  logic                             no_amo_return;
 
   bp_be_fu_op_s                     fu_op;
 

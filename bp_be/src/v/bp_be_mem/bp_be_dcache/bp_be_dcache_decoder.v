@@ -36,6 +36,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.load_op                       = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (lr_sc_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_scw, e_dcache_op_scd:
        begin
@@ -45,6 +46,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.store_op                      = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (lr_sc_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amoswapw, e_dcache_op_amoswapd:
        begin
@@ -53,6 +55,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amoswap_op                    = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_swap_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amoaddw, e_dcache_op_amoaddd:
        begin
@@ -61,6 +64,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amoadd_op                     = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_arithmetic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amoxorw, e_dcache_op_amoxord:
        begin
@@ -69,6 +73,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amoxor_op                     = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_logic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amoandw, e_dcache_op_amoandd:
        begin
@@ -77,6 +82,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amoand_op                     = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_logic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amoorw, e_dcache_op_amoord:
        begin
@@ -85,6 +91,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amoor_op                      = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_logic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amominw, e_dcache_op_amomind:
        begin
@@ -93,6 +100,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amomin_op                     = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_arithmetic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amomaxw, e_dcache_op_amomaxd:
        begin
@@ -101,6 +109,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amomax_op                     = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_arithmetic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amominuw, e_dcache_op_amominud:
        begin
@@ -109,6 +118,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amominu_op                    = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_arithmetic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_amomaxuw, e_dcache_op_amomaxud:
        begin
@@ -117,6 +127,7 @@ module bp_be_dcache_decoder
         decoded_cast_o.amomaxu_op                    = 1'b1;
         decoded_cast_o.signed_op                     = 1'b1;
         decoded_cast_o.l2_op                         = (amo_fetch_arithmetic_p == e_l2);
+        decoded_cast_o.no_return                     = dcache_pkt.no_amo_return;
        end
       e_dcache_op_ld, e_dcache_op_lw, e_dcache_op_lh, e_dcache_op_lb:
        begin

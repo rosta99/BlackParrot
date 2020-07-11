@@ -153,13 +153,21 @@ typedef enum logic [2:0]
  * bp_lce_cce_req_type_e specifies whether the containing message is related to a read or write
  * cache miss request from and LCE.
  */
-typedef enum logic [2:0]
+typedef enum logic [3:0]
 {
-  e_lce_req_type_rd         = 3'b000 // Read-miss
-  ,e_lce_req_type_wr        = 3'b001 // Write-miss
-  ,e_lce_req_type_uc_rd     = 3'b010 // Uncached Read-miss
-  ,e_lce_req_type_uc_wr     = 3'b011 // Uncached Write-miss
-  // 3'b100 - 3'b111 reserved / custom
+  e_lce_req_type_rd         = 4'b0000 // Read-miss
+  ,e_lce_req_type_wr        = 4'b0001 // Write-miss
+  ,e_lce_req_type_uc_rd     = 4'b0010 // Uncached Read-miss
+  ,e_lce_req_type_uc_wr     = 4'b0011 // Uncached Write-miss
+  ,e_lce_req_type_amoswap   = 4'b0100 // Amoswap op
+  ,e_lce_req_type_amoadd    = 4'b0101 // Amoadd op
+  ,e_lce_req_type_amoxor    = 4'b0110 // Amoxor op
+  ,e_lce_req_type_amoand    = 4'b0111 // Amoand op
+  ,e_lce_req_type_amoor     = 4'b1000 // Amoor op
+  ,e_lce_req_type_amomin    = 4'b1001 // Amomin op
+  ,e_lce_req_type_amomax    = 4'b1010 // Amomax op
+  ,e_lce_req_type_amominu   = 4'b1011 // Amominu op
+  ,e_lce_req_type_amomaxu   = 4'b1100 // Amomaxu op
 } bp_lce_cce_req_type_e;
 
 

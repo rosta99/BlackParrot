@@ -33,7 +33,7 @@ module testbench
    , parameter mem_file_p         = "inv"
    , parameter mem_cap_in_bytes_p = 2**20
    // CCE testing uses any address it wants, no DRAM offset required
-   , parameter mem_offset_p       = '0
+   , parameter mem_offset_p       = (skip_init_p) ? '0 : dram_base_addr_gp
 
    , parameter use_max_latency_p      = 0
    , parameter use_random_latency_p   = 1

@@ -655,7 +655,7 @@ module bp_be_dcache
       cache_req_v_o = cache_req_ready_i & ~poison_i;
     end
     else if (l2_amo_req & ~uncached_load_data_v_r) begin
-      cache_req_v_o = cache_req_ready_i;
+      cache_req_v_o = cache_req_ready_i & ~poison_i;
       unique if (lr_req) begin
         cache_req_cast_o.msg_type  = e_amo_lr;
         cache_req_cast_o.no_return = decode_tv_r.no_return;
@@ -726,7 +726,7 @@ module bp_be_dcache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(stat_mem_v_li & ~stat_mem_w_li)
+     ,.data_i(cache_req_v_o)
      ,.data_o(cache_req_metadata_v_o)
      );
 

@@ -99,6 +99,7 @@ typedef enum logic [3:0]
   typedef struct packed                                         \
   {                                                             \
     bp_cce_mem_msg_payload_s                     payload;       \
+    logic                                        amo_no_return; \
     bp_mem_msg_size_e                            size;          \
     logic [addr_width_mp-1:0]                    addr;          \
     bp_cce_mem_cmd_type_e                        msg_type;      \
@@ -121,7 +122,7 @@ typedef enum logic [3:0]
 `define bp_cce_mem_msg_header_width(addr_width_mp, lce_id_width_mp, lce_assoc_mp) \
   ($bits(bp_cce_mem_cmd_type_e)+addr_width_mp \
    +`bp_cce_mem_msg_payload_width(lce_id_width_mp, lce_assoc_mp)\
-   +$bits(bp_mem_msg_size_e))
+   +$bits(bp_mem_msg_size_e)+1)
 
 `define bp_cce_mem_msg_width(addr_width_mp, data_width_mp, lce_id_width_mp, lce_assoc_mp) \
   (`bp_cce_mem_msg_header_width(addr_width_mp,lce_id_width_mp,lce_assoc_mp)+data_width_mp)

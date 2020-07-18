@@ -63,6 +63,7 @@
  */                                                                                                      \
   typedef struct packed                                                                                  \
   {                                                                                                      \
+    logic                                        amo_no_return;                                          \
     logic [`BSG_SAFE_CLOG2(lce_assoc_mp)-1:0]    lru_way_id;                                             \
     bp_lce_cce_req_non_excl_e                    non_exclusive;                                          \
     logic [paddr_width_mp-1:0]                   addr;                                                   \
@@ -229,7 +230,7 @@ typedef enum logic [3:0]
   ,e_lce_cmd_st_tr           = 4'b1001 // set state and transfer block
   ,e_lce_cmd_st_tr_wb        = 4'b1010 // set state, transfer, and writeback block
   ,e_lce_cmd_uc_data         = 4'b1011 // uncached data to LCE
-  ,e_lce_cmd_uc_st_done      = 4'b1100 // uncached store complete
+  ,e_lce_cmd_uc_req_done     = 4'b1100 // uncached request complete message, no data to LCE
   // 4'b1101 - 4'b1111 reserved / custom
 } bp_lce_cmd_type_e;
 
@@ -261,7 +262,7 @@ typedef enum logic [2:0]
 
 `define bp_lce_cce_req_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp) \
   (cce_id_width_mp+$bits(bp_lce_cce_req_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp        \
-   +paddr_width_mp+$bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp))
+   +paddr_width_mp+$bits(bp_lce_cce_req_non_excl_e)+`BSG_SAFE_CLOG2(lce_assoc_mp)+1)
 
 `define bp_lce_cmd_header_width(cce_id_width_mp, lce_id_width_mp, paddr_width_mp, lce_assoc_mp)     \
   (cce_id_width_mp+$bits(bp_lce_cmd_type_e)+$bits(bp_mem_msg_size_e)+lce_id_width_mp            \

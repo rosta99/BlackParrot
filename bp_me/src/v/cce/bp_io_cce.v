@@ -67,7 +67,7 @@ module bp_io_cce
       begin
         lce_cmd_cast_o                 = '0;
         lce_cmd_cast_o.header.dst_id   = io_resp_cast_i.header.payload.lce_id;
-        lce_cmd_cast_o.header.msg_type = e_lce_cmd_uc_st_done;
+        lce_cmd_cast_o.header.msg_type = e_lce_cmd_uc_req_done;
         // no data, size is '0 equivalent
         lce_cmd_cast_o.header.addr     = io_resp_cast_i.header.addr;
         lce_cmd_cast_o.header.src_id   = cce_id_i;

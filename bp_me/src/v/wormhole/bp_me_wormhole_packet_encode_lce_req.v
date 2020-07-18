@@ -76,8 +76,17 @@ module bp_me_wormhole_packet_encode_lce_req
       e_lce_req_type_rd
       ,e_lce_req_type_wr
       ,e_lce_req_type_uc_rd: packet_cast_o.len = coh_noc_len_width_p'(lce_cce_req_req_len_lp);
-      // uncached write (store) has data
-      e_lce_req_type_uc_wr:
+      // uncached write (store) and amo ops have data
+      e_lce_req_type_uc_wr
+      ,e_lce_req_type_amoswap
+      ,e_lce_req_type_amoadd
+      ,e_lce_req_type_amoxor
+      ,e_lce_req_type_amoand
+      ,e_lce_req_type_amoor
+      ,e_lce_req_type_amomin
+      ,e_lce_req_type_amomax
+      ,e_lce_req_type_amominu
+      ,e_lce_req_type_amomaxu:
         unique case (payload_cast_i.header.size)
           e_mem_msg_size_1: packet_cast_o.len = coh_noc_len_width_p'(lce_cce_req_data_len_1_lp);
           e_mem_msg_size_2: packet_cast_o.len = coh_noc_len_width_p'(lce_cce_req_data_len_2_lp);

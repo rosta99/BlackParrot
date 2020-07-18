@@ -90,11 +90,23 @@ module bp_me_wormhole_packet_encode_mem_resp
     endcase
 
     case (mem_resp_cast_i.header.msg_type)
+      // TODO: confirm that both LR and SC ops return data
       e_cce_mem_rd
-      ,e_cce_mem_uc_rd: packet_cast_o.len = data_resp_len_li;
+      ,e_cce_mem_uc_rd
+      ,e_cce_mem_lr
+      ,e_cce_mem_sc
+      ,e_cce_mem_amo_swap
+      ,e_cce_mem_amo_add
+      ,e_cce_mem_amo_xor
+      ,e_cce_mem_amo_and
+      ,e_cce_mem_amo_or
+      ,e_cce_mem_amo_min
+      ,e_cce_mem_amo_max
+      ,e_cce_mem_amo_minu
+      ,e_cce_mem_amo_maxu : packet_cast_o.len = data_resp_len_li;
       e_cce_mem_uc_wr
       ,e_cce_mem_wr
-      ,e_cce_mem_pre  : packet_cast_o.len = len_width_p'(mem_resp_ack_len_lp);
+      ,e_cce_mem_pre      : packet_cast_o.len = len_width_p'(mem_resp_ack_len_lp);
       default: packet_cast_o = '0;
     endcase
   end

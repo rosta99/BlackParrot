@@ -94,9 +94,20 @@ module bp_me_wormhole_packet_encode_mem_cmd
     case (mem_cmd_cast_i.header.msg_type)
       e_cce_mem_rd
       ,e_cce_mem_uc_rd
-      ,e_cce_mem_pre  : packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
+      ,e_cce_mem_pre
+      ,e_cce_mem_lr       : packet_cast_o.len = len_width_p'(mem_cmd_req_len_lp);
       e_cce_mem_uc_wr
-      ,e_cce_mem_wr   : packet_cast_o.len = data_cmd_len_li;
+      ,e_cce_mem_wr
+      ,e_cce_mem_sc
+      ,e_cce_mem_amo_swap
+      ,e_cce_mem_amo_add
+      ,e_cce_mem_amo_xor
+      ,e_cce_mem_amo_and
+      ,e_cce_mem_amo_or
+      ,e_cce_mem_amo_min
+      ,e_cce_mem_amo_max
+      ,e_cce_mem_amo_minu
+      ,e_cce_mem_amo_maxu : packet_cast_o.len = data_cmd_len_li;
       default: packet_cast_o = '0;
     endcase
   end

@@ -81,7 +81,7 @@ module bp_me_wormhole_packet_encode_lce_cmd
       ,e_lce_cmd_tr
       ,e_lce_cmd_st_tr
       ,e_lce_cmd_st_tr_wb
-      ,e_lce_cmd_uc_st_done: packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
+      ,e_lce_cmd_uc_req_done: packet_cast_o.len = coh_noc_len_width_p'(lce_cmd_cmd_len_lp);
       // data and uncached data commands have data
       e_lce_cmd_data
       ,e_lce_cmd_uc_data:

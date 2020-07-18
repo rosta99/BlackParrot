@@ -363,7 +363,7 @@ module bp_cce_msg
           lce_cmd_v_o = lce_cmd_ready_i;
 
           lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
-          lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
+          lce_cmd.header.msg_type = e_lce_cmd_uc_req_done;
           // leave size field as '0 equivalent - no data in this message
           lce_cmd.header.src_id = cfg_bus_cast.cce_id;
           lce_cmd.header.addr = mem_resp.header.addr;
@@ -458,7 +458,7 @@ module bp_cce_msg
             // output command message
             // after store response is received, need to send uncached store done command to LCE
             lce_cmd.header.dst_id = mem_resp.header.payload.lce_id;
-            lce_cmd.header.msg_type = e_lce_cmd_uc_st_done;
+            lce_cmd.header.msg_type = e_lce_cmd_uc_req_done;
             // leave size as '0 equivalent, no data in this message
             lce_cmd.header.src_id = cfg_bus_cast.cce_id;
             lce_cmd.header.addr = mem_resp.header.addr;

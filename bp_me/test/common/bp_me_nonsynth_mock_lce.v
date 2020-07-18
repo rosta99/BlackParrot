@@ -593,7 +593,7 @@ module bp_me_nonsynth_mock_lce
       end
       UNCACHED_SEND_TR_RESP: begin
         // send return packet to TR
-        if (lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_uc_st_done) begin
+        if (lce_cmd_v_i & lce_cmd.header.msg_type == e_lce_cmd_uc_req_done) begin
           // store sends back null packet when it receives lce_cmd back
           tr_pkt_v_o = tr_pkt_ready_i;
           tr_pkt_lo.paddr = lce_cmd.header.addr;

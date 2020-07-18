@@ -91,6 +91,7 @@ module bp_mem_transducer
                                           ,size    : mem_cmd_r.header.size
                                           ,addr    : mem_cmd_r.header.addr
                                           ,msg_type: mem_cmd_r.header.msg_type
+                                          ,amo_no_return: mem_cmd_r.header.amo_no_return
                                          }
                              };
 

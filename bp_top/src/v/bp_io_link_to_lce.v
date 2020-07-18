@@ -68,7 +68,7 @@ module bp_io_link_to_lce
      );
 
   wire io_cmd_wr_not_rd = (io_cmd_li.header.msg_type == e_cce_mem_uc_wr);
-  wire lce_cmd_wr_not_rd = (lce_cmd_li.header.msg_type == e_lce_cmd_uc_st_done);
+  wire lce_cmd_wr_not_rd = (lce_cmd_li.header.msg_type == e_lce_cmd_uc_req_done);
   always_comb
     begin
       lce_req_lo                    = '0;

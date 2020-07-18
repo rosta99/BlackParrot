@@ -170,6 +170,7 @@ assign mem_resp_lo =
     ,addr          : mem_cmd_lo.header.addr
     ,payload       : mem_cmd_lo.header.payload
     ,size          : mem_cmd_lo.header.size
+    ,amo_no_return : mem_cmd_lo.header.amo_no_return
     }
     ,data          : cce_block_width_p'(rdata_lo)
     };

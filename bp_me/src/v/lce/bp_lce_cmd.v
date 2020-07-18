@@ -92,13 +92,14 @@ module bp_lce_cmd
 
     // request complete signals
     // cached requests and uncached loads block in the caches, but uncached stores do not
+    // amo with return also blocks in the caches
     // cache_req_complete_o is routed to the cache to indicate a blocking request is complete
     , output logic                                   cache_req_complete_o
     , output logic                                   cache_req_critical_o
-    // uncached store request complete is used by the LCE to decrement the request credit counter
-    // when an uncached store complete, but is not routed to the cache because the caches do not
-    // block (miss) on uncached stores
-    , output logic                                   uc_store_req_complete_o
+    // uncached request complete is used by the LCE to decrement the request credit counter
+    // when an uncached store or amo no return op completes.
+    // It is not routed to the cache because the caches do not block (miss) on these ops
+    , output logic                                   uc_req_complete_o
 
     // LCE-CCE interface
     // Resp: ready->valid
@@ -266,7 +267,7 @@ module bp_lce_cmd
 
     state_n = state_r;
 
-    uc_store_req_complete_o = 1'b0;
+    uc_req_complete_o = 1'b0;
 
     cache_req_complete_o = 1'b0;
     //TODO: support partial fill, currently not supported
@@ -524,11 +525,12 @@ module bp_lce_cmd
 
             end
 
-            //  Uncached Store Done - store has committed to memory
-            e_lce_cmd_uc_st_done: begin
+            // Uncached Req Done
+            // uncached store has committed to memory or amo op done
+            e_lce_cmd_uc_req_done: begin
               // dequeue message and assert request complete signal for a cycle
               lce_cmd_yumi_o = lce_cmd_v_i;
-              uc_store_req_complete_o = lce_cmd_yumi_o;
+              uc_req_complete_o = lce_cmd_yumi_o;
 
             end
 

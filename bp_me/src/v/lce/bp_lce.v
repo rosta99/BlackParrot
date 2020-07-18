@@ -126,7 +126,7 @@ module bp_lce
 
   // LCE Request Module
   logic req_ready_lo;
-  logic uc_store_req_complete_lo;
+  logic uc_req_complete_lo;
   bp_lce_req
     #(.bp_params_p(bp_params_p)
       ,.assoc_p(assoc_p)
@@ -154,7 +154,7 @@ module bp_lce
       ,.credits_full_o(credits_full_o)
       ,.credits_empty_o(credits_empty_o)
 
-      ,.uc_store_req_complete_i(uc_store_req_complete_lo)
+      ,.uc_req_complete_i(uc_req_complete_lo)
 
       ,.lce_req_o(lce_req_o)
       ,.lce_req_v_o(lce_req_v_o)
@@ -185,7 +185,7 @@ module bp_lce
       ,.sync_done_o(cmd_sync_done_lo)
       ,.cache_req_complete_o(cache_req_complete_o)
       ,.cache_req_critical_o(cache_req_critical_o)
-      ,.uc_store_req_complete_o(uc_store_req_complete_lo)
+      ,.uc_req_complete_o(uc_req_complete_lo)
 
       ,.data_mem_pkt_o(data_mem_pkt_o)
       ,.data_mem_pkt_v_o(data_mem_pkt_v_o)

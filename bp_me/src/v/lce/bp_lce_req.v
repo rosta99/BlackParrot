@@ -9,6 +9,15 @@
  *    LCE request to the coherenece system to request the desired cache block, or to
  *    perform an uncached access.
  *
+ *    Memory is divided into regions with cacheability and coherence properties. Regions
+ *    of memory may be cacheable or uncacheable, and may be coherent or incoherent. Memory
+ *    accesses can be one of the following:
+ *    - cacheable to coherent memory
+ *    - uncacheable to coherent memory
+ *    - uncacheable to incoherent memory
+ *
+ *    Hardware does not guarantee correct behavior for cacheable access to incoherent memory.
+ *
  */
 
 module bp_lce_req
@@ -84,8 +93,8 @@ module bp_lce_req
     // can be raised at any time after the LCE request sends out
     , input                                          cache_req_complete_i
 
-    // Uncached Store request complete signal
-    , input                                          uc_store_req_complete_i
+    // Uncached request complete signal
+    , input                                          uc_req_complete_i
 
     // LCE Request out
     // ready->valid
@@ -103,6 +112,7 @@ module bp_lce_req
     ,e_ready
     ,e_send_cached_req
     ,e_send_uncached_req
+    ,e_send_amo_req
   } lce_req_state_e;
   lce_req_state_e state_n, state_r;
 
@@ -160,7 +170,7 @@ module bp_lce_req
   logic [`BSG_WIDTH(credits_p)-1:0] credit_count_lo;
   wire credit_v_li = lce_req_v_o;
   wire credit_ready_li = lce_req_ready_i;
-  wire credit_returned_li = cache_req_complete_i | uc_store_req_complete_i;
+  wire credit_returned_li = cache_req_complete_i | uc_req_complete_i;
   bsg_flow_counter
     #(.els_p(credits_p))
     req_counter
@@ -222,6 +232,17 @@ module bp_lce_req
             e_uc_load: begin
               state_n = e_send_uncached_req;
             end
+            e_amo_swap
+            , e_amo_add
+            , e_amo_xor
+            , e_amo_and
+            , e_amo_or
+            , e_amo_min
+            , e_amo_max
+            , e_amo_minu
+            , e_amo_maxu: begin
+                state_n = e_send_amo_req;
+            end
             default: begin
             end
           endcase
@@ -238,7 +259,6 @@ module bp_lce_req
         lce_req.header.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.hit_or_repl_way);
         lce_req.header.addr = cache_req_r.addr;
         lce_req.header.size = req_block_size_lp;
-        lce_req.header.addr = cache_req_r.addr;
         lce_req.header.msg_type = (cache_req_r.msg_type == e_miss_load)
           ? e_lce_req_type_rd
           : e_lce_req_type_wr;
@@ -270,6 +290,37 @@ module bp_lce_req
           ? e_ready
           : e_send_uncached_req;
 
+      end
+
+      // AMO request
+      e_send_amo_req: begin
+        // valid cache request arrived last cycle (or earlier) and is held in cache_req_r
+
+        // send when port is ready and metadata has arrived
+        lce_req_v_o = lce_req_ready_i & cache_req_metadata_v_r;
+
+        lce_req.data[0+:dword_width_p] = cache_req_r.data[0+:dword_width_p];
+
+        lce_req.header.addr = cache_req_r.addr;
+        lce_req.header.size = bp_mem_msg_size_e'(cache_req_r.size);
+        lce_req.header.amo_no_return = cache_req_r.no_return;
+        lce_req.header.lru_way_id = lg_lce_assoc_lp'(cache_req_metadata_r.hit_or_repl_way);
+        unique case (cache_req_r.msg_type)
+          e_amo_swap: lce_req.header.msg_type = e_lce_req_type_amoswap;
+          e_amo_add: lce_req.header.msg_type = e_lce_req_type_amoadd;
+          e_amo_xor: lce_req.header.msg_type = e_lce_req_type_amoxor;
+          e_amo_and: lce_req.header.msg_type = e_lce_req_type_amoand;
+          e_amo_or: lce_req.header.msg_type = e_lce_req_type_amoor;
+          e_amo_min: lce_req.header.msg_type = e_lce_req_type_amomin;
+          e_amo_max: lce_req.header.msg_type = e_lce_req_type_amomax;
+          e_amo_minu: lce_req.header.msg_type = e_lce_req_type_amominu;
+          e_amo_maxu: lce_req.header.msg_type = e_lce_req_type_amomaxu;
+          default: lce_req.header.msg_type = e_lce_req_type_amoswap;
+        endcase
+
+        state_n = lce_req_v_o
+          ? e_ready
+          : e_send_amo_req;
       end
 
       default: begin

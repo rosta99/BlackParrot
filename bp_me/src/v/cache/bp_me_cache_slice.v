@@ -35,7 +35,6 @@ module bp_me_cache_slice
    , output                                    mem_cmd_header_v_o
    , input                                     mem_cmd_header_yumi_i
 
-   // Currently only support cache width == dword width
    , output [dword_width_p-1:0]                mem_cmd_data_o
    , output                                    mem_cmd_data_v_o
    , input                                     mem_cmd_data_yumi_i
@@ -44,11 +43,63 @@ module bp_me_cache_slice
    , input                                     mem_resp_header_v_i
    , output                                    mem_resp_header_ready_o
 
-   // Currently only support cache width == dword width
    , input [dword_width_p-1:0]                 mem_resp_data_i
    , input                                     mem_resp_data_v_i
    , output                                    mem_resp_data_ready_o
    );
+
+  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem);
+  bp_cce_mem_msg_s mem_cmd, mem_resp;
+  assign mem_cmd = mem_cmd_i;
+  assign mem_resp_o = mem_resp;
+
+  bp_cce_mem_msg_header_s mem_header_lo;
+  logic [dword_width_p-1:0] mem_data_lo;
+  logic mem_v_lo, mem_ready_li, mem_lock_lo;
+  bp_lite_to_stream
+   #(.bp_params_p(bp_params_p)
+     ,.in_data_width_p(cce_block_width_p)
+     ,.out_data_width_p(dword_width_p)
+     ,.forward_p(1)
+     )
+   lite2stream
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_i(mem_cmd)
+     ,.mem_v_i(mem_cmd_v_i)
+     ,.mem_ready_o(mem_cmd_ready_o)
+
+     ,.mem_header_o(mem_header_lo)
+     ,.mem_data_o(mem_data_lo)
+     ,.mem_v_o(mem_v_lo)
+     ,.mem_ready_i(mem_ready_li)
+     ,.mem_lock_o(mem_lock_lo)
+     );
+
+  bp_cce_mem_msg_header_s mem_header_li;
+  logic [dword_width_p-1:0] mem_data_li;
+  logic mem_v_li, mem_ready_lo, mem_lock_li;
+  bp_stream_to_lite
+   #(.bp_params_p(bp_params_p)
+     ,.in_data_width_p(dword_width_p)
+     ,.out_data_width_p(cce_block_width_p)
+     ,.forward_p(0)
+     )
+   stream2lite
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.mem_header_i(mem_header_li)
+     ,.mem_data_i(mem_data_li)
+     ,.mem_v_i(mem_v_li)
+     ,.mem_ready_o(mem_ready_lo)
+     ,.mem_lock_i(mem_lock_li)
+
+     ,.mem_o(mem_resp)
+     ,.mem_v_o(mem_resp_v_o)
+     ,.mem_ready_i(mem_resp_yumi_i)
+     );
 
   `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
   bsg_cache_pkt_s cache_pkt_li;
@@ -61,21 +112,25 @@ module bp_me_cache_slice
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.mem_cmd_i(mem_cmd_i)
-     ,.mem_cmd_v_i(mem_cmd_v_i)
-     ,.mem_cmd_ready_o(mem_cmd_ready_o)
+     ,.mem_cmd_header_i(mem_header_lo)
+     ,.mem_cmd_data_i(mem_data_lo)
+     ,.mem_cmd_v_i(mem_v_lo)
+     ,.mem_cmd_ready_o(mem_ready_li)
+     ,.mem_cmd_lock_i(mem_lock_lo)
 
-     ,.mem_resp_o(mem_resp_o)
-     ,.mem_resp_v_o(mem_resp_v_o)
-     ,.mem_resp_yumi_i(mem_resp_yumi_i)
+     ,.mem_resp_header_o(mem_header_li)
+     ,.mem_resp_data_o(mem_data_li)
+     ,.mem_resp_v_o(mem_v_li)
+     ,.mem_resp_yumi_i(mem_ready_lo & mem_v_li)
+     ,.mem_resp_lock_o(mem_lock_li)
 
      ,.cache_pkt_o(cache_pkt_li)
-     ,.v_o(cache_pkt_v_li)
-     ,.ready_i(cache_pkt_ready_lo)
+     ,.cache_pkt_v_o(cache_pkt_v_li)
+     ,.cache_pkt_ready_i(cache_pkt_ready_lo)
 
-     ,.data_i(cache_data_lo)
-     ,.v_i(cache_data_v_lo)
-     ,.yumi_o(cache_data_yumi_li)
+     ,.cache_data_i(cache_data_lo)
+     ,.cache_v_i(cache_data_v_lo)
+     ,.cache_yumi_o(cache_data_yumi_li)
      );
 
   `declare_bsg_cache_dma_pkt_s(paddr_width_p);
@@ -142,7 +197,6 @@ module bp_me_cache_slice
   // We're always "ready" for a mem_resp, because when we send a mem_cmd, the cache is waiting
   //   for the DMA data. Unsolicited mem_resp are not allowed by the protocol
   assign mem_resp_header_ready_o = 1'b1;
-  wire unused = mem_resp_header_v_i;
 
 endmodule
 

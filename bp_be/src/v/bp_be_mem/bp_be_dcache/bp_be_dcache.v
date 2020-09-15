@@ -347,11 +347,7 @@ module bp_be_dcache
       // We poison the valid of the stage rather than tl_we, to relieve critical paths on the
       //   large memory enables. The tradeoff is an additional toggle whenever there is a flush
       //   during an incoming dcache request
-<<<<<<< HEAD
-      v_tv_r <= tv_we & ~flush_i;
-=======
-      v_tv_r <= tv_we & ~poison_i & ~no_return_req;
->>>>>>> Making the dcache operation non blocking on an L2 amo request with destination register as 0
+      v_tv_r <= tv_we & ~flush_i & ~no_return_req;
 
       if (tv_we) begin
         decode_tv_r <= decode_tl_r;
@@ -663,6 +659,8 @@ module bp_be_dcache
         cache_req_cast_o.size = e_size_2B;
       else if (decode_tv_r.byte_op)
         cache_req_cast_o.size = e_size_1B;
+      else
+        cache_req_cast_o.size = e_size_8B;
     end
     else
       cache_req_cast_o.size = e_size_64B;
@@ -789,7 +787,7 @@ module bp_be_dcache
   assign ready_o = cache_req_ready_i & ~cache_miss_r;
 
   assign early_v_o = v_tv_r & ((uncached_tv_r & (decode_tv_r.load_op & (uncached_load_data_v_r | decode_tv_r.no_return)))
-                              | (decode_tv_r.store_op & decode_tv_r.l2_op & (uncached_load_data_v_r | decode_tv_r.no_return)))
+                              | (decode_tv_r.store_op & decode_tv_r.l2_op & (uncached_load_data_v_r | decode_tv_r.no_return))
                               | (uncached_tv_r & ~decode_tv_r.l2_op & (decode_tv_r.store_op & cache_req_ready_i))
                               | (~uncached_tv_r & ~decode_tv_r.l2_op & ~decode_tv_r.fencei_op & ~miss_tv)
                               // Always send fencei when coherent

@@ -60,6 +60,7 @@
   typedef struct packed                                                                   \
   {                                                                                       \
     logic [payload_width_mp-1:0]                 payload;                                 \
+    logic                                        amo_no_return;                           \
     bp_bedrock_msg_size_e                        size;                                    \
     logic [addr_width_mp-1:0]                    addr;                                    \
     bp_bedrock_msg_u                             msg_type;                                \
@@ -167,7 +168,18 @@ typedef enum logic [3:0]
   ,e_bedrock_mem_uc_rd   = 4'b0010  // Uncached load (uncached in L2/LLC)
   ,e_bedrock_mem_uc_wr   = 4'b0011  // Uncached store (uncached in L2/LLC)
   ,e_bedrock_mem_pre     = 4'b0100  // Pre-fetch block request from CCE, fill into L2/LLC if able
-  // 4'b0101 - 4'b1111 reserved // custom
+  // Atomic support
+  ,e_bedrock_mem_lr       = 4'b0101
+  ,e_bedrock_mem_sc       = 4'b0110
+  ,e_bedrock_mem_amo_swap = 4'b0111
+  ,e_bedrock_mem_amo_add  = 4'b1000
+  ,e_bedrock_mem_amo_xor  = 4'b1001
+  ,e_bedrock_mem_amo_and  = 4'b1010
+  ,e_bedrock_mem_amo_or   = 4'b1011
+  ,e_bedrock_mem_amo_min  = 4'b1100
+  ,e_bedrock_mem_amo_max  = 4'b1101
+  ,e_bedrock_mem_amo_minu = 4'b1110
+  ,e_bedrock_mem_amo_maxu = 4'b1111
 } bp_bedrock_mem_type_e;
 
 /*
@@ -180,7 +192,16 @@ typedef enum logic [3:0]
   ,e_bedrock_req_wr        = 4'b0001 // Write-miss
   ,e_bedrock_req_uc_rd     = 4'b0010 // Uncached Read-miss
   ,e_bedrock_req_uc_wr     = 4'b0011 // Uncached Write-miss
-  // 4'b0100 - 4'b1111 reserved / custom
+  ,e_bedrock_req_amoswap   = 4'b0100 // Amoswap op
+  ,e_bedrock_req_amoadd    = 4'b0101 // Amoadd op
+  ,e_bedrock_req_amoxor    = 4'b0110 // Amoxor op
+  ,e_bedrock_req_amoand    = 4'b0111 // Amoand op
+  ,e_bedrock_req_amoor     = 4'b1000 // Amoor op
+  ,e_bedrock_req_amomin    = 4'b1001 // Amomin op
+  ,e_bedrock_req_amomax    = 4'b1010 // Amomax op
+  ,e_bedrock_req_amominu   = 4'b1011 // Amominu op
+  ,e_bedrock_req_amomaxu   = 4'b1100 // Amomaxu op
+  // 4'b1101 - 4'b1111 reserved / custom
 } bp_bedrock_req_type_e;
 
 /*
@@ -312,7 +333,7 @@ typedef enum logic [2:0]
  */
 
 `define bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp) \
-  ($bits(bp_bedrock_msg_u)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+payload_width_mp)
+  ($bits(bp_bedrock_msg_u)+addr_width_mp+$bits(bp_bedrock_msg_size_e)+1+payload_width_mp)
 
 `define bp_bedrock_msg_width(addr_width_mp, payload_width_mp, data_width_mp) \
   (`bp_bedrock_msg_header_width(addr_width_mp, payload_width_mp)+data_width_mp)

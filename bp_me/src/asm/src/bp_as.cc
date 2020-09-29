@@ -669,9 +669,9 @@ Assembler::parsePushQueueArgs(vector<string> *tokens, int n, pushq_args *args) {
   }
   args->dst_q = parseDstQueue(tokens->at(1));
   if (args->dst_q == e_dst_q_sel_lce_cmd) {
-    args->lce_cmd = (bp_lce_cmd_type_e)parseImm(tokens->at(2));
+    args->lce_cmd = (bp_bedrock_cmd_type_e)parseImm(tokens->at(2));
   } else {
-    args->mem_cmd = (bp_mem_msg_e)parseImm(tokens->at(2));
+    args->mem_cmd = (bp_bedrock_mem_type_e)parseImm(tokens->at(2));
   }
   // after the opcode, address, and command, all args are optional and default to 0
   // args are specified as "arg=value"
@@ -1033,7 +1033,7 @@ Assembler::parseQueue(vector<string> *tokens, int n, parsed_inst_s *parsed_inst)
       inst->type_u.pushq.src_a = qargs.src;
       if (qargs.custom) {
         // for now, send 64-bits of data, sourced from src_a
-        inst->type_u.pushq.way_or_size.msg_size = e_mem_msg_size_8;
+        inst->type_u.pushq.way_or_size.msg_size = e_bedrock_msg_size_8;
       } else {
         inst->type_u.pushq.way_or_size.way_sel = qargs.way_sel;
       }
@@ -1208,7 +1208,7 @@ Assembler::writeInstToOutput(parsed_inst_s *parsed_inst, uint16_t line_number, s
       printField(inst->type_u.pushq.src_a, bp_cce_inst_opd_width, ss);
       printField(inst->type_u.pushq.lce_sel, bp_cce_inst_mux_sel_lce_width, ss);
       printField(inst->type_u.pushq.addr_sel, bp_cce_inst_mux_sel_addr_width, ss);
-      printField(inst->type_u.pushq.cmd.lce_cmd, bp_lce_cmd_type_width, ss);
+      printField(inst->type_u.pushq.cmd.lce_cmd, bp_bedrock_cmd_type_width, ss);
       printField(inst->type_u.pushq.spec, 1, ss);
       printField(inst->type_u.pushq.custom, 1, ss);
       printField(inst->type_u.pushq.dst_q, bp_cce_inst_dst_q_sel_width, ss);

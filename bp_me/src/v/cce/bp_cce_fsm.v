@@ -674,7 +674,7 @@ module bp_cce_fsm
         lce_cmd_busy = lce_cmd_v_o;
 
         lce_cmd_payload.dst_id = mem_resp_payload.lce_id;
-        lce_cmd.header.msg_type.cmd = e_bedrock_cmd_uc_st_done;
+        lce_cmd.header.msg_type.cmd = e_bedrock_cmd_uc_req_done;
         lce_cmd_payload.way_id = '0;
         lce_cmd.header.payload = lce_cmd_payload;
         lce_cmd.header.addr = mem_resp.header.addr;

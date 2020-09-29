@@ -223,7 +223,7 @@ typedef enum logic [3:0]
   ,e_bedrock_cmd_st_tr           = 4'b1001 // set state and transfer block
   ,e_bedrock_cmd_st_tr_wb        = 4'b1010 // set state, transfer, and writeback block
   ,e_bedrock_cmd_uc_data         = 4'b1011 // uncached data to LCE
-  ,e_bedrock_cmd_uc_st_done      = 4'b1100 // uncached store complete
+  ,e_bedrock_cmd_uc_req_done     = 4'b1100 // uncached request (w/o data returned) complete
   // 4'b1101 - 4'b1111 reserved / custom
 } bp_bedrock_cmd_type_e;
 

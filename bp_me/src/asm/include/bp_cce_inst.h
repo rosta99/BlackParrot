@@ -9,7 +9,7 @@
 #ifndef BP_CCE_INST_H
 #define BP_CCE_INST_H
 
-#include "bp_common_lce_cce_if.h"
+#include "bp_common_bedrock_if.h"
 
 /*
  * Instruction width definitions
@@ -649,12 +649,12 @@ typedef struct {
 
 typedef union {
   bp_cce_inst_mux_sel_way_e     way_sel : bp_cce_inst_mux_sel_way_width;
-  bp_mem_msg_size_e             msg_size : bp_mem_msg_size_width;
+  bp_bedrock_msg_size_e         msg_size : bp_bedrock_msg_size_width;
 } pushq_way_or_size_u;
 
 typedef union {
-  bp_lce_cmd_type_e      lce_cmd : bp_lce_cmd_type_width;
-  bp_mem_msg_e           mem_cmd : bp_cce_mem_cmd_type_width;
+  bp_bedrock_cmd_type_e      lce_cmd : bp_bedrock_cmd_type_width;
+  bp_bedrock_mem_type_e      mem_cmd : bp_bedrock_mem_type_width;
 } pushq_cmd_u;
 
 typedef struct {

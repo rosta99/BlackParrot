@@ -17,7 +17,7 @@
 #define ST_TR 9
 #define ST_TR_WB 10
 #define UC_DATA 11
-#define UCST 12
+#define UC_REQ_DONE 12
 
 #define SYNC_ACK 0
 #define INV_ACK 1

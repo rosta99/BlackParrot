@@ -519,7 +519,7 @@ module bp_me_nonsynth_mock_lce
         // If the CCE will skip initialization and operate in uncached only
         // mode, go to UNCACHED_ONLY. If the CCE will run in normal mode, go
         // to CLEAR_STATE to reset tag, data, and dirty_bits.
-        lce_state_n = (skip_init_p) ? UNCACHED_ONLY : CLEAR_STATE;
+        lce_state_n = CLEAR_STATE;
       end
       CLEAR_STATE: begin
         // clear all tag, data, and dirty bit state
@@ -540,7 +540,11 @@ module bp_me_nonsynth_mock_lce
 
         cnt_rst = (cnt == counter_width_p'(sets_p));
         cnt_inc = ~cnt_rst;
-        lce_state_n = (cnt_rst) ? INIT : CLEAR_STATE;
+        lce_state_n = (cnt_rst)
+                      ? (skip_init_p)
+                        ? UNCACHED_ONLY
+                        : INIT
+                      : CLEAR_STATE;
       end
       // Until all syncs occur, all requests will be uncached
       UNCACHED_ONLY: begin

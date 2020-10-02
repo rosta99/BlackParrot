@@ -1,7 +1,16 @@
 export NUM_INSTR_P ?= 4096
 SEED_P ?= 1
-# uncached / normal mode testing
+
+# mode and cached/uncached settings
+# SKIP_INIT_P controls whether the CCE operates in normal or uncached only mode
+# SKIP_INIT_P: 0 = CCE normal mode, 1 = CCE uncached only mode
+# if SKIP_INIT_P == 1, then LCE_MODE_P must be 1
 export SKIP_INIT_P ?= 0
+# LCE_MODE_P controls whether the LCE issues cached, uncached, or both requests
+# this parameter is only used by the trace rom script, not by the LCE hardware, so it is
+#   not added to TB_PARAMS
+# LCE_MODE_P: 0 = cached requests, 1 = uncached requests, 2 = both requests
+export LCE_MODE_P ?= 0
 
 COH_PROTO   ?= mesi
 CCE_MEM_PATH = $(BP_ME_DIR)/src/asm/roms

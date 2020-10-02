@@ -1195,8 +1195,13 @@ module bp_cce_fsm
           lce_cmd_payload.dst_id = mshr_r.lce_id;
           // set state to invalid and writeback
           lce_cmd.header.msg_type.cmd = e_bedrock_cmd_st_wb;
-          lce_cmd_payload.way_id = mshr_r.lru_way_id;
-          lce_cmd.header.addr = mshr_r.lru_paddr;
+          if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
+            lce_cmd_payload.way_id = mshr_r.way_id;
+            lce_cmd.header.addr = mshr_r.paddr;
+          end else begin
+            lce_cmd_payload.way_id = mshr_r.lru_way_id;
+            lce_cmd.header.addr = mshr_r.lru_paddr;
+          end
           // Note: this state must be e_COH_I to properly handle amo or uncached access to
           // coherent memory that requires invalidating the requesting LCE if it has the block
           lce_cmd_payload.state = e_COH_I;

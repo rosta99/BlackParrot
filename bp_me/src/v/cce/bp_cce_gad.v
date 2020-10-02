@@ -107,6 +107,10 @@ module bp_cce_gad
   assign req_lce_ro = req_lce_cached & ((sharers_coh_states_i[req_lce_id] == e_COH_S)
                                         | (sharers_coh_states_i[req_lce_id] == e_COH_F)
                                         | (sharers_coh_states_i[req_lce_id] == e_COH_O));
+  logic req_lce_dirty;
+  assign req_lce_dirty = req_lce_cached & ((sharers_coh_states_i[req_lce_id] == e_COH_M)
+                                           | (sharers_coh_states_i[req_lce_id] == e_COH_E)
+                                           | (sharers_coh_states_i[req_lce_id] == e_COH_O));
 
   assign req_addr_way_o = req_lce_cached
     ? sharers_ways_i[req_lce_id]
@@ -122,7 +126,7 @@ module bp_cce_gad
   // also set replacement flag when the block is cached (in any state) by the requesting
   // LCE and the request is an atomic operation or an uncached operation.
   assign replacement_flag_o = (uncached_req_flag_i | atomic_req_flag_i)
-                              ? req_lce_cached
+                              ? req_lce_dirty
                               : (~upgrade_flag_o & ((lru_coh_state_i == e_COH_E)
                                                     | (lru_coh_state_i == e_COH_M)
                                                     | (lru_coh_state_i == e_COH_O))

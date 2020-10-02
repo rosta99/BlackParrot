@@ -24,6 +24,7 @@ module testbench
    , parameter instr_count = 1
    , parameter skip_init_p = 0
    , parameter lce_trace_p = 0
+   , parameter lce_tr_trace_p = 0
    , parameter dram_trace_p = 0
    , parameter dram_fixed_latency_p=0
 
@@ -177,6 +178,24 @@ bind bp_me_nonsynth_mock_lce
       ,.lce_cmd_o_i(lce_cmd_o)
       ,.lce_cmd_o_v_i(lce_cmd_v_o)
       ,.lce_cmd_o_ready_i(lce_cmd_ready_i)
+      );
+
+bind bp_me_nonsynth_mock_lce
+  bp_me_nonsynth_lce_tr_tracer
+    #(.bp_params_p(bp_params_p)
+      ,.sets_p(sets_p)
+      ,.block_width_p(cce_block_width_p)
+      )
+    lce_tr_tracer
+     (.clk_i(clk_i & (testbench.lce_tr_trace_p == 1))
+      ,.reset_i(reset_i)
+      ,.lce_id_i(lce_id_i)
+      ,.tr_pkt_i(tr_pkt_i)
+      ,.tr_pkt_v_i(tr_pkt_v_i)
+      ,.tr_pkt_yumi_i(tr_pkt_yumi_o)
+      ,.tr_pkt_o_i(tr_pkt_o)
+      ,.tr_pkt_v_o_i(tr_pkt_v_o)
+      ,.tr_pkt_ready_i(tr_pkt_ready_i)
       );
 
 bind bp_cce_wrapper

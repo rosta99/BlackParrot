@@ -481,6 +481,8 @@ module bp_cce
       ,.req_lce_i(mshr_lo.lce_id)
       ,.req_type_flag_i(mshr_lo.flags[e_opd_rqf])
       ,.lru_coh_state_i(mshr_lo.lru_coh_state)
+      ,.atomic_req_flag_i(mshr_lo.flags[e_opd_arf])
+      ,.uncached_req_flag_i(mshr_lo.flags[e_opd_ucf])
 
       ,.req_addr_way_o(gad_req_addr_way_lo)
       ,.owner_lce_o(gad_owner_lce_lo)

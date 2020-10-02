@@ -121,10 +121,12 @@ module bp_cce_gad
   // Replace the LRU block if not doing an upgrade and the lru block might be dirty
   // also set replacement flag when the block is cached (in any state) by the requesting
   // LCE and the request is an atomic operation or an uncached operation.
-  assign replacement_flag_o = ((~upgrade_flag_o & ((lru_coh_state_i == e_COH_E)
-                                                   | (lru_coh_state_i == e_COH_M)
-                                                   | (lru_coh_state_i == e_COH_O)))
-                               | (req_lce_cached & (atomic_req_flag_i | uncached_req_flag_i)));
+  assign replacement_flag_o = (uncached_req_flag_i | atomic_req_flag_i)
+                              ? req_lce_cached
+                              : (~upgrade_flag_o & ((lru_coh_state_i == e_COH_E)
+                                                    | (lru_coh_state_i == e_COH_M)
+                                                    | (lru_coh_state_i == e_COH_O))
+                                );
 
   // Owner LCE
   logic [num_lce_p-1:0] owner_lce_one_hot;

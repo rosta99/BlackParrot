@@ -6,8 +6,8 @@ module bp_uce
   import bp_common_cfg_link_pkg::*;
   import bp_me_pkg::*;
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
-    , parameter uce_mem_data_width_p = "inv"
     `declare_bp_proc_params(bp_params_p)
+    , parameter uce_mem_data_width_p = cce_block_width_p
     `declare_bp_mem_if_widths(paddr_width_p, uce_mem_data_width_p, lce_id_width_p, lce_assoc_p, uce_mem)
     , parameter assoc_p = 8
     , parameter sets_p = 64
@@ -380,7 +380,7 @@ module bp_uce
   logic mem_cmd_done_r;
   bsg_dff_reset_set_clear
    #(.width_p(1)
-    ,.clear_over_set_p(1)) // if 1, clear overrides set.
+    ,.clear_over_set_p(1))
    mem_cmd_done_reg
     (.clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -719,7 +719,7 @@ module bp_uce
         e_uc_read_wait:
           begin
             data_mem_pkt_cast_o.opcode = e_cache_data_mem_uncached;
-            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_p){mem_resp_cast_i.data}};
+            data_mem_pkt_cast_o.data = {(fill_width_p/dword_width_p){mem_resp_cast_i.data[0+:dword_width_p]}};
             data_mem_pkt_v_o = load_resp_v_li;
 
             cache_req_complete_o = data_mem_pkt_yumi_i;

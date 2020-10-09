@@ -60,7 +60,7 @@ lce_cached = 1 if (args.lce_mode == 0) else 0
 
 # Validate LCE and CCE mode selections
 assert (args.lce_mode >= 0 and args.lce_mode <= 2), 'LCE mode invalid'
-assert (args.cce_mode >= 0 and args.lce_mode <= 1), 'CCE mode invalid'
+assert (args.cce_mode >= 0 and args.cce_mode <= 1), 'CCE mode invalid'
 
 # Validate LCE and CCE mode combinations
 # if CCE mode is uncached, LCE mode must be uncached only

@@ -59,14 +59,14 @@ lce_mixed = 1 if (args.lce_mode == 2) else 0
 lce_cached = 1 if (args.lce_mode == 0) else 0
 
 # Validate LCE and CCE mode selections
-assert(args.lce_mode >= 0 and args.lce_mode <= 2, 'LCE mode invalid')
-assert(args.cce_mode >= 0 and args.lce_mode <= 1, 'CCE mode invalid')
+assert (args.lce_mode >= 0 and args.lce_mode <= 2), 'LCE mode invalid'
+assert (args.cce_mode >= 0 and args.lce_mode <= 1), 'CCE mode invalid'
 
 # Validate LCE and CCE mode combinations
 # if CCE mode is uncached, LCE mode must be uncached only
 # if CCE mode is normal, LCE mode can be any
 if skip_init:
-  assert(lce_uncached == 1, 'LCE mode must be uncached only if CCE mode is uncached only')
+  assert lce_uncached == 1, 'LCE mode must be uncached only if CCE mode is uncached only'
 
 ## cache parameters
 cache_assoc = args.assoc

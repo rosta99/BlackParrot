@@ -1144,7 +1144,9 @@ module bp_cce_fsm
         end else if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
           dir_w_v = mshr_r.flags[e_opd_rf];
           dir_cmd = e_wds_op;
-          dir_way_li = mshr_r.lru_way_id;
+          // the block, if cached at the LCE, is in the way indicated by the way_id field of
+          // the MSHR as produced by the GAD module
+          dir_way_li = mshr_r.way_id;
 
         // normal requests, write tag and state
         end else begin
@@ -1195,6 +1197,8 @@ module bp_cce_fsm
           lce_cmd_payload.dst_id = mshr_r.lce_id;
           // set state to invalid and writeback
           lce_cmd.header.msg_type.cmd = e_bedrock_cmd_st_wb;
+          // for an uc/amo request, the mshr way_id field indicates the way in which the requesting
+          // LCE's copy of the cache block is stored at the LCE
           if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
             lce_cmd_payload.way_id = mshr_r.way_id;
             lce_cmd.header.addr = mshr_r.paddr;

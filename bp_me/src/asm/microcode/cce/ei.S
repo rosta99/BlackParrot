@@ -74,11 +74,47 @@ read_l2: pushq memCmd MEM_CMD_RD addr=req lce=req way=lru wp=1
 bi ready
 
 # Uncached Request Routine
-uncached_req: bf uncached_store rqf
+uncached_req: bf uc_coherent rcf
+bf uncached_store rqf
 pushq memCmd MEM_CMD_UC_RD addr=req lce=req
 popq lceReq
 bi ready
 uncached_store: pushq memCmd MEM_CMD_UC_WR addr=req lce=req
 popq lceReq
+bi ready
+
+# Uncached request to coherent/cacheable memory
+uc_coherent: rdp addr=req
+bf uc_coherent pf
+popq lceReq
+rdw addr=req lce=req lru_way=lru
+gad
+movis COH_I nextCohSt
+
+bfz uc_next_state rf
+
+# Replacement Routine
+pushq lceCmd ST_WB addr=req lce=req way=req
+# wait for writeback response
+uc_replacement_poph: poph lceResp r0
+beqi r0 COH_ACK uc_replacement_poph
+bf uc_complete_replacement nwbf
+pushq memCmd MEM_CMD_WR addr=req lce=req way=req wp=1
+uc_complete_replacement: popq lceResp
+
+uc_next_state: wde addr=req lce=req way=req state=nextCohSt
+
+uc_inv_check: bfz uc_mem cef cmf pt
+pushq lceCmd ST_WB addr=req lce=owner way=owner
+uc_inv_poph: poph lceResp r0
+beqi r0 COH_ACK uc_inv_poph
+bf uc_complete_inv nwbf
+pushq memCmd MEM_CMD_WR addr=req lce=req way=req wp=1
+uc_complete_inv: popq lceResp
+
+uc_mem: bf coherent_store rqf
+pushq memCmd MEM_CMD_UC_RD addr=req lce=req wp=1
+bi ready
+coherent_store: pushq memCmd MEM_CMD_UC_WR addr=req lce=req wp=1
 bi ready
 

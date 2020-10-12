@@ -59,12 +59,16 @@ module bp_fe_icache
     , input                                            ptag_v_i
     , input                                            uncached_i
 
+    , input force_tl_i
+    , input poison_tv_i
+
     // Used to keep I$ and pc_gen in sync
     , output logic                                     tl_we_o
+    , output logic [vaddr_width_p-1:0]                 tl_vaddr_o
     , output logic                                     tv_we_o
+    , output logic [vaddr_width_p-1:0]                 tv_vaddr_o
 
     , output [instr_width_p-1:0]                       data_o
-    , output [vaddr_width_p-1:0]                       vaddr_o
     , output logic                                     miss_not_data_o
     , output logic                                     data_v_o
     , input                                            data_yumi_i
@@ -129,16 +133,16 @@ module bp_fe_icache
   logic [vaddr_width_p-1:0] vaddr_tl_r;
   logic fetch_op_tl_r, fencei_op_tl_r, fill_op_tl_r;
 
-  wire is_fetch  = v_i & (icache_pkt.op inside {e_icache_fetch, e_icache_redir});
+  wire is_fetch  = v_i & (icache_pkt.op == e_icache_fetch);
   wire is_fencei = v_i & (icache_pkt.op == e_icache_fencei);
   wire is_fill   = v_i & (icache_pkt.op == e_icache_fill);
-  wire is_redir  = v_i & (icache_pkt.op == e_icache_redir);
 
-  assign tl_we = yumi_o;
+  assign tl_we = yumi_o | force_tl_i;
   assign tl_we_o = tl_we;
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tl_r       <= 1'b0;
+      vaddr_tl_r   <= '0;
     end else begin
       if (tl_we | tv_we) begin
         v_tl_r           <= tl_we;
@@ -237,6 +241,8 @@ module bp_fe_icache
      ,.o(addr_bank_offset_dec_tl)
      );
 
+  assign tl_vaddr_o = vaddr_tl_r;
+
   // TV stage
   logic                                                      v_tv_r;
   logic                                                      cached_tv_r;
@@ -279,15 +285,16 @@ module bp_fe_icache
   logic [lg_icache_assoc_lp-1:0] way_invalid_index;
   logic                          invalid_exist;
 
-  assign tv_we = ~v_tv_r | data_yumi_i | is_redir;
+  assign tv_we = ~v_tv_r | data_yumi_i | poison_tv_i;
   assign tv_we_o = tv_we;
   always_ff @ (posedge clk_i) begin
     if (reset_i) begin
       v_tv_r       <= 1'b0;
+      vaddr_tv_r   <= '0;
     end
     else begin
       if (tv_we) begin
-        v_tv_r         <= v_tl_r & ~is_redir;
+        v_tv_r         <= v_tl_r & ~poison_tv_i;
         addr_tv_r      <= addr_tl;
         vaddr_tv_r     <= vaddr_tl_r;
         tag_tv_r       <= tag_tl;
@@ -426,15 +433,13 @@ module bp_fe_icache
 
   always_comb
     case (icache_pkt.op)
-      e_icache_fetch, e_icache_fill, e_icache_fencei:
-        yumi_o = cache_req_ready_i & is_ready & (~v_tl_r | tv_we) & v_i;
-      e_icache_redir:
+      e_icache_fill, e_icache_fencei:
         yumi_o = cache_req_ready_i & is_ready & v_i;
       default:
-        yumi_o = '0;
+        yumi_o = cache_req_ready_i & is_ready & (~v_tl_r | tv_we) & v_i;
     endcase
 
-  assign data_v_o        = v_tv_r & complete_tv_r & ~is_redir;
+  assign data_v_o        = v_tv_r & complete_tv_r;
   assign miss_not_data_o = v_tv_r & complete_tv_r & ~hit_v_tv_r;
 
   logic [bank_width_lp-1:0]   ld_data_way_picked;
@@ -468,7 +473,8 @@ module bp_fe_icache
      ,.data_o(final_data)
      );
   assign data_o = final_data;
-  assign vaddr_o = vaddr_tv_r;
+  assign tv_vaddr_o = vaddr_tv_r;
+
 
   // data mem
   logic                                                       data_mem_v;

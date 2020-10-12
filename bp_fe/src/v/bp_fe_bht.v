@@ -43,7 +43,7 @@ bsg_dff
    ,.data_i({r_v_i, idx_r_i})
    ,.data_o({r_v_r, idx_r_r})
    );
-assign predict_o = r_v_r ? mem[idx_r_r][1] : `BSG_UNDEFINED_IN_SIM(1'b0);
+assign predict_o = mem[idx_r_r][1];
 
 //2-bit saturating counter(high_bit:prediction direction,low_bit:strong/weak prediction)
 always_ff @(posedge clk_i) 

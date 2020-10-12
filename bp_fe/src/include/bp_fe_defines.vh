@@ -53,13 +53,13 @@
 `define declare_bp_fe_pc_gen_stage_s(vaddr_width_mp, ghist_width_mp) \
   typedef struct packed             \
   {                                 \
+    logic v;                        \
     logic btb;                      \
     logic bht;                      \
     logic ret;                      \
     logic ovr;                      \
     logic taken;                    \
                                     \
-    logic [vaddr_width_mp-1:0] pc;  \
     logic [ghist_width_mp-1:0] ghist; \
   }  bp_fe_pc_gen_stage_s
 
@@ -67,7 +67,7 @@
   (vaddr_width_mp + 5)
 
 `define bp_fe_pc_gen_stage_width(vaddr_width_mp, ghist_width_mp) \
-  (5 + vaddr_width_mp + ghist_width_mp)
+  (6 + ghist_width_mp)
 
 `endif
 

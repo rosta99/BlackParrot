@@ -29,18 +29,21 @@ module bp_fe_pc_gen
    , input                                           redirect_v_i
    //   The next PC to fetch, and its metadata.
    //   yumi-only, which advances the PC under regular conditions
-   , output [vaddr_width_p-1:0]                      next_pc_o
+   , output logic [vaddr_width_p-1:0]                next_pc_o
    , input                                           tl_we_i
 
    // Cycle 0: Exceptions are raised by the TLB
+   //   The fetch unit may poison TL in the cache if the prediction is
+   //   determined to be wrong
    , input                                           tv_we_i
+   , input [vaddr_width_p-1:0]                       tl_pc_i
+   , output logic                                    override_o
 
    // Cycle 1:
    //   The fetch packet coming from the I$, containing both the fetch PC and the next fetch PC
-   //   valid-only, because it must be handled before the fetch goes into the queue
-   , output [vaddr_width_p-1:0]                      fetch_pc_o
    , input [instr_width_p-1:0]                       fetch_instr_i
    , output [branch_metadata_fwd_width_p-1:0]        fetch_br_metadata_o
+   , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input                                           fetch_yumi_i
 
    // Pipeline asynchronous 
@@ -107,7 +110,7 @@ module bp_fe_pc_gen
   // Gselect predictor
   wire bht_r_v_li = tl_we_i;
   wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_r_li =
-    {pc_gen_stage_n[0].pc[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist};
+    {next_pc_o[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist};
   wire bht_w_v_li =
     (redirect_v_i & redirect_br_metadata.is_br) | (attaboy_yumi_o & attaboy_br_metadata.is_br);
   wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_w_li = redirect_v_i
@@ -164,7 +167,7 @@ module bp_fe_pc_gen
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
 
   // Return address stack
-  assign return_addr_n = pc_gen_stage_r[1].pc + vaddr_width_p'(4);
+  assign return_addr_n = fetch_pc_i + vaddr_width_p'(4);
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p))
    ras
@@ -193,16 +196,12 @@ module bp_fe_pc_gen
   assign is_jalr      = fetch_yumi_i & scan_instr.jalr;
   assign is_call      = fetch_yumi_i & scan_instr.call;
   assign is_ret       = fetch_yumi_i & scan_instr.ret;
-  wire btb_miss_ras   = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != return_addr_r);
-  wire btb_miss_br    = ~pc_gen_stage_r[0].btb | (pc_gen_stage_r[0].pc != br_target);
-  assign ovr_ret      = btb_miss_ras & is_ret;
-  assign ovr_taken    = btb_miss_br & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
-  assign br_target    = pc_gen_stage_r[1].pc + scan_instr.imm;
+  wire btb_miss_ras   = ~pc_gen_stage_r[0].btb | (tl_pc_i != return_addr_r);
+  wire btb_miss_br    = ~pc_gen_stage_r[0].btb | (tl_pc_i != br_target);
+  assign ovr_ret      = fetch_yumi_i & btb_miss_ras & is_ret;
+  assign ovr_taken    = fetch_yumi_i & btb_miss_br & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
+  assign br_target    = fetch_pc_i + scan_instr.imm;
 
-  // Interface connections
-  assign next_pc_o = pc_gen_stage_n[0].pc;
-
-  assign fetch_pc_o = pc_gen_stage_r[1].pc;
   assign fetch_br_metadata =
     '{pred_taken: pc_gen_stage_r[1].taken | is_jalr // We can't predict target, but jalr are always taken
       ,src_btb  : pc_gen_stage_r[1].btb
@@ -235,7 +234,7 @@ module bp_fe_pc_gen
         pc_gen_stage_n[0].ret   = redirect_br_metadata.src_ret;
         pc_gen_stage_n[0].ovr   = '0; // Does not come from metadata
         pc_gen_stage_n[0].ghist = ghistory_n;
-        pc_gen_stage_n[0].pc    = redirect_pc_i;
+        next_pc_o               = redirect_pc_i;
       end
     else
       begin
@@ -249,16 +248,18 @@ module bp_fe_pc_gen
   
         // Next PC calculation
         if (ovr_ret)
-            pc_gen_stage_n[0].pc = return_addr_r;
+            next_pc_o = return_addr_r;
         else if (ovr_taken)
-            pc_gen_stage_n[0].pc = br_target;
+            next_pc_o = br_target;
         else if (btb_taken)
-            pc_gen_stage_n[0].pc = btb_br_tgt_lo;
+            next_pc_o = btb_br_tgt_lo;
         else
           begin
-            pc_gen_stage_n[0].pc = pc_gen_stage_r[0].pc + 4;
+            next_pc_o = tl_pc_i + vaddr_width_p'(4);
           end
       end
+
+  assign override_o = ovr_ret | ovr_taken;
 
   always_ff @(posedge clk_i)
     begin
@@ -289,9 +290,9 @@ module bp_fe_pc_gen
           is_jalr_site <= is_jalr;
           is_call_site <= is_call;
           is_ret_site  <= is_ret;
-          btb_tag_site <= pc_gen_stage_r[1].pc[2+btb_idx_width_p+:btb_tag_width_p];
-          btb_idx_site <= pc_gen_stage_r[1].pc[2+:btb_idx_width_p];
-          bht_idx_site <= pc_gen_stage_r[1].pc[2+:bht_idx_width_p];
+          btb_tag_site <= fetch_pc_i[2+btb_idx_width_p+:btb_tag_width_p];
+          btb_idx_site <= fetch_pc_i[2+:btb_idx_width_p];
+          bht_idx_site <= fetch_pc_i[2+:bht_idx_width_p];
         end
     end
 

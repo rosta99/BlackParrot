@@ -7,7 +7,6 @@
     e_icache_fetch
     ,e_icache_fencei
     ,e_icache_fill
-    ,e_icache_redir
   } bp_fe_icache_op_e;
 
 `define declare_bp_fe_icache_pkt_s(vaddr_width_mp) \

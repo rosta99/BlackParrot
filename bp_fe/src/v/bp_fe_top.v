@@ -111,10 +111,9 @@ module bp_fe_top
   assign fe_cmd_branch_metadata = br_miss_v ? fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd : fe_cmd_cast_i.operands.attaboy.branch_metadata_fwd;
 
   logic [vaddr_width_p-1:0] next_pc_lo;
-  logic override_v_lo;
   logic [instr_width_p-1:0] fetch_instr_li;
-  logic [vaddr_width_p-1:0] fetch_pc_lo;
-  logic fetch_v_li, fetch_yumi_lo;
+  logic [vaddr_width_p-1:0] icache_vaddr_tl_lo, fetch_pc_lo;
+  logic fetch_yumi_li;
   bp_fe_branch_metadata_fwd_s fetch_br_metadata_lo;
   logic [vaddr_width_p-1:0] redirect_pc_li;
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_li;
@@ -123,6 +122,7 @@ module bp_fe_top
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_li;
   logic attaboy_v_li, attaboy_yumi_lo;
   logic tl_we_lo, tv_we_lo;
+  logic override_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
    pc_gen
@@ -132,11 +132,13 @@ module bp_fe_top
      ,.next_pc_o(next_pc_lo)
      ,.tl_we_i(tl_we_lo)
      ,.tv_we_i(tv_we_lo)
+     ,.tl_pc_i(icache_vaddr_tl_lo)
+     ,.override_o(override_lo)
   
-     ,.fetch_pc_o(fetch_pc_lo)
+     ,.fetch_pc_i(fetch_pc_lo)
      ,.fetch_instr_i(fetch_instr_li)
      ,.fetch_br_metadata_o(fetch_br_metadata_lo)
-     ,.fetch_yumi_i(fetch_yumi_lo)
+     ,.fetch_yumi_i(fetch_yumi_li)
   
      ,.redirect_pc_i(redirect_pc_li)
      ,.redirect_br_metadata_i(redirect_br_metadata_li)
@@ -171,18 +173,6 @@ module bp_fe_top
      ,.entry_o(entry_lo)
      );
 
-  logic [vtag_width_p-1:0] vtag_r;
-  bsg_dff_reset_en
-   #(.width_p(vtag_width_p))
-   vtag_reg
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(next_pc_yumi_li)
-
-     ,.data_i(next_pc_lo[vaddr_width_p-1-:vtag_width_p])
-     ,.data_o(vtag_r)
-     );
-
   logic instr_access_fault_v, instr_page_fault_v;
   logic itlb_miss_r, instr_access_fault_r, instr_page_fault_r;
   always_ff @(posedge clk_i)
@@ -202,7 +192,7 @@ module bp_fe_top
     end
   
 
-  assign passthrough_entry = '{ptag: vtag_r, default: '0};
+  assign passthrough_entry = '{ptag: icache_vaddr_tl_lo[vaddr_width_p-1-:vtag_width_p], default: '0};
   assign passthrough_v_lo  = 1'b1;
   assign itlb_r_entry      = shadow_translation_en_r ? entry_lo : passthrough_entry;
   assign itlb_r_v_lo       = shadow_translation_en_r ? itlb_v_lo : passthrough_v_lo;
@@ -222,17 +212,15 @@ module bp_fe_top
   
   logic [instr_width_p-1:0] icache_data_lo;
   logic icache_data_v_lo, icache_data_yumi_li;
-  logic [vaddr_width_p-1:0] icache_vaddr_lo;
   logic icache_miss_not_data_lo;
   wire [ptag_width_p-1:0] ptag_li = itlb_r_entry.ptag;
   wire ptag_v_li = itlb_r_v_lo & ~instr_access_fault_v & ~instr_page_fault_v;
-  assign icache_data_yumi_li = fetch_yumi_lo;
 
   `declare_bp_fe_icache_pkt_s(vaddr_width_p);
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt =
     '{vaddr    : next_pc_lo
-      ,op      : icache_fence_v ? e_icache_fencei : icache_fill_v ? e_icache_fill : cmd_nonattaboy_v ? e_icache_redir : e_icache_fetch 
+      ,op      : icache_fence_v ? e_icache_fencei : icache_fill_v ? e_icache_fill : e_icache_fetch
       };
 
   bp_fe_icache 
@@ -244,20 +232,23 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
  
      ,.icache_pkt_i(icache_pkt)
-     // TODO: state_reset
      ,.v_i(is_run | cmd_nonattaboy_v)
      ,.yumi_o(next_pc_yumi_li)
      ,.tl_we_o(tl_we_lo)
+     ,.tl_vaddr_o(icache_vaddr_tl_lo)
+     // turn into exception
+     ,.force_tl_i(cmd_nonattaboy_v)
+     ,.poison_tv_i(cmd_nonattaboy_v | override_lo)
 
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
      ,.uncached_i(uncached_li)
      ,.tv_we_o(tv_we_lo)
+     ,.tv_vaddr_o(fetch_pc_lo)
   
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
      ,.data_yumi_i(icache_data_yumi_li)
-     ,.vaddr_o(icache_vaddr_lo)
      ,.miss_not_data_o(icache_miss_not_data_lo)
   
      ,.cache_req_o(cache_req_o)
@@ -309,9 +300,8 @@ module bp_fe_top
   assign instr_access_fault_v = (mode_fault_v | did_fault_v);
   assign instr_page_fault_v   = itlb_r_v_lo & shadow_translation_en_r & (instr_priv_page_fault | instr_exe_page_fault);
 
-  assign fetch_v_li = icache_data_v_lo;
   assign fetch_instr_li = icache_data_lo;
-  assign fetch_yumi_lo = fe_queue_v_o;
+  assign fetch_yumi_li  = icache_data_yumi_li;
 
   assign redirect_pc_li = fe_cmd_yumi_o ? fe_cmd_cast_i.vaddr : fetch_pc_lo;
   assign redirect_br_metadata_li = fe_cmd_cast_i.operands.pc_redirect_operands.branch_metadata_fwd;
@@ -323,9 +313,11 @@ module bp_fe_top
 
   wire icache_miss = icache_data_v_lo & icache_miss_not_data_lo;
 
-  wire fe_instr_v = icache_data_v_lo;
+  wire fe_instr_v     = icache_data_v_lo;
   wire fe_exception_v = (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss);
   assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
+
+  assign icache_data_yumi_li = icache_data_v_lo & fe_queue_ready_i;
 
   always_comb
     begin

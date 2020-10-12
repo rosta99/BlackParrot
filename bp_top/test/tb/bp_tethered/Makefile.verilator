@@ -48,7 +48,6 @@ endif
 $(SIM_DIR)/prog.nbf: $(SIM_DIR)/cce_ucode.mem $(SIM_DIR)/prog.mem
 	cd $(@D); python $(MEM2NBF) $(NBF_INPUTS) > $@
 
-OVERRIDE_BOOTROM ?= 0
 $(SIM_DIR)/bootrom.riscv: bootrom
 	cp $(BP_TEST_DIR)/src/bootrom/bootrom.riscv $@
 

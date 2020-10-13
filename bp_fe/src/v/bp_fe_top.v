@@ -121,7 +121,7 @@ module bp_fe_top
   logic redirect_v_li;
   bp_fe_branch_metadata_fwd_s attaboy_br_metadata_li;
   logic attaboy_v_li, attaboy_yumi_lo;
-  logic tl_we_lo, tv_we_lo;
+  logic tl_we_lo, tl_v_lo, tv_we_lo, tv_v_lo;
   logic override_lo;
   bp_fe_pc_gen
    #(.bp_params_p(bp_params_p))
@@ -193,7 +193,7 @@ module bp_fe_top
   
 
   assign passthrough_entry = '{ptag: icache_vaddr_tl_lo[vaddr_width_p-1-:vtag_width_p], default: '0};
-  assign passthrough_v_lo  = 1'b1;
+  assign passthrough_v_lo  = tl_v_lo;
   assign itlb_r_entry      = shadow_translation_en_r ? entry_lo : passthrough_entry;
   assign itlb_r_v_lo       = shadow_translation_en_r ? itlb_v_lo : passthrough_v_lo;
   
@@ -236,15 +236,16 @@ module bp_fe_top
      ,.yumi_o(next_pc_yumi_li)
      ,.tl_we_o(tl_we_lo)
      ,.tl_vaddr_o(icache_vaddr_tl_lo)
-     // turn into exception
-     ,.force_tl_i(cmd_nonattaboy_v)
-     ,.poison_tv_i(cmd_nonattaboy_v | override_lo)
+     ,.force_i(cmd_nonattaboy_v)
+     ,.poison_i(cmd_nonattaboy_v | override_lo)
+     ,.tl_v_o(tl_v_lo)
 
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
-     ,.uncached_i(uncached_li)
+     ,.ptag_uncached_i(uncached_li)
      ,.tv_we_o(tv_we_lo)
      ,.tv_vaddr_o(fetch_pc_lo)
+     ,.tv_v_o(tv_v_lo)
   
      ,.data_o(icache_data_lo)
      ,.data_v_o(icache_data_v_lo)
@@ -297,7 +298,7 @@ module bp_fe_top
   wire is_uncached_mode = (cfg_bus_cast_i.icache_mode == e_lce_mode_uncached);
   wire mode_fault_v = (is_uncached_mode & ~uncached_li);
   wire did_fault_v = (ptag_li[ptag_width_p-1-:io_noc_did_width_p] != '0);
-  assign instr_access_fault_v = (mode_fault_v | did_fault_v);
+  assign instr_access_fault_v = itlb_r_v_lo & (mode_fault_v | did_fault_v);
   assign instr_page_fault_v   = itlb_r_v_lo & shadow_translation_en_r & (instr_priv_page_fault | instr_exe_page_fault);
 
   assign fetch_instr_li = icache_data_lo;

@@ -372,7 +372,7 @@ bind bp_be_top
        ,.v_tl_r(v_tl_r)
 
        ,.v_tv_r(v_tv_r)
-       ,.addr_tv_r(addr_tv_r)
+       ,.addr_tv_r(paddr_tv_r)
        ,.lr_miss_tv(1'b0)
        ,.sc_op_tv_r(1'b0)
        ,.sc_success(1'b0)

@@ -145,6 +145,15 @@ typedef enum logic [1:0] {
 `define bp_cache_stat_mem_pkt_width(sets_mp, ways_mp) \
   (`BSG_SAFE_CLOG2(sets_mp)+`BSG_SAFE_CLOG2(ways_mp)+`bp_cache_stat_mem_opcode_width)
 
+`define declare_bp_cache_tag_info_s(tag_width_mp, cache_name_mp) \
+  typedef struct packed {                   \
+    bp_coh_states_e          state;         \
+    logic [tag_width_mp-1:0] tag;           \
+  } bp_``cache_name_mp``_tag_info_s
+
+`define bp_cache_tag_info_width(tag_width_mp) \
+  ($bits(bp_coh_states_e)+tag_width_mp)
+
 `define declare_bp_cache_stat_info_s(ways_mp, cache_name_mp)  \
   typedef struct packed {                 \
     logic [ways_mp-2:0] lru;              \
@@ -160,7 +169,8 @@ typedef enum logic [1:0] {
   `declare_bp_cache_data_mem_pkt_s(sets_mp, ways_mp, block_data_width_mp, fill_width_mp, cache_name_mp); \
   `declare_bp_cache_tag_mem_pkt_s(sets_mp, ways_mp, tag_width_mp, cache_name_mp);                        \
   `declare_bp_cache_stat_mem_pkt_s(sets_mp, ways_mp, cache_name_mp);                                     \
-  `declare_bp_cache_stat_info_s(ways_mp, cache_name_mp)
+  `declare_bp_cache_tag_info_s(tag_width_mp, cache_name_mp);                                             \
+  `declare_bp_cache_stat_info_s(ways_mp, cache_name_mp);
 
 
 `define declare_bp_cache_service_if_widths(addr_width_mp, tag_width_mp, sets_mp, ways_mp, req_data_width_mp, block_data_width_mp, fill_width_mp, cache_name_mp) \
@@ -168,6 +178,7 @@ typedef enum logic [1:0] {
   , localparam ``cache_name_mp``_req_metadata_width_lp = `bp_cache_req_metadata_width(ways_mp)                                         \
   , localparam ``cache_name_mp``_data_mem_pkt_width_lp=`bp_cache_data_mem_pkt_width(sets_mp,ways_mp,block_data_width_mp,fill_width_mp) \
   , localparam ``cache_name_mp``_tag_mem_pkt_width_lp=`bp_cache_tag_mem_pkt_width(sets_mp,ways_mp,tag_width_mp)                        \
+  , localparam ``cache_name_mp``_tag_info_width_lp=`bp_cache_tag_info_width(tag_width_mp)                                              \
   , localparam ``cache_name_mp``_stat_mem_pkt_width_lp=`bp_cache_stat_mem_pkt_width(sets_mp,ways_mp)                                   \
   , localparam ``cache_name_mp``_stat_info_width_lp=`bp_cache_stat_info_width(ways_mp)
 

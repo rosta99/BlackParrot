@@ -88,7 +88,7 @@ module bp_core
   bp_icache_tag_mem_pkt_s icache_tag_mem_pkt_li;
   logic icache_tag_mem_pkt_v_li;
   logic icache_tag_mem_pkt_yumi_lo;
-  logic [ptag_width_p-1:0] icache_tag_mem_lo;
+  logic [icache_tag_info_width_lp-1:0] icache_tag_mem_lo;
 
   bp_icache_stat_mem_pkt_s icache_stat_mem_pkt_li;
   logic icache_stat_mem_pkt_v_li;
@@ -104,7 +104,7 @@ module bp_core
   bp_dcache_tag_mem_pkt_s dcache_tag_mem_pkt_li;
   logic dcache_tag_mem_pkt_v_li;
   logic dcache_tag_mem_pkt_yumi_lo;
-  logic [ptag_width_p-1:0] dcache_tag_mem_lo;
+  logic [dcache_tag_info_width_lp-1:0] dcache_tag_mem_lo;
 
   bp_dcache_stat_mem_pkt_s dcache_stat_mem_pkt_li;
   logic dcache_stat_mem_pkt_v_li;

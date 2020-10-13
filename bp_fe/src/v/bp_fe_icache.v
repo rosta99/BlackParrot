@@ -33,22 +33,21 @@ module bp_fe_icache
   #(parameter bp_params_e bp_params_p = e_bp_default_cfg
     `declare_bp_proc_params(bp_params_p)
     `declare_bp_cache_service_if_widths(paddr_width_p, ptag_width_p, icache_sets_p, icache_assoc_p, dword_width_p, icache_block_width_p, icache_fill_width_p, icache)
-
-    , localparam lg_icache_assoc_lp=`BSG_SAFE_CLOG2(icache_assoc_p)
-    , localparam num_words_per_block_lp = icache_block_width_p / word_width_p
-    , localparam bank_width_lp = icache_block_width_p / icache_assoc_p
-    , localparam num_words_per_bank_lp = bank_width_lp / word_width_p
-    , localparam word_offset_width_lp = `BSG_SAFE_CLOG2(num_words_per_bank_lp)
-    , localparam data_mem_mask_width_lp=(bank_width_lp >> 3)
-    , localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(dword_width_p >> 3)
-    , localparam bank_offset_width_lp = `BSG_SAFE_CLOG2(icache_assoc_p)
-    , localparam index_width_lp=`BSG_SAFE_CLOG2(icache_sets_p)
-    , localparam block_offset_width_lp = (bank_offset_width_lp+byte_offset_width_lp)
-    , localparam block_size_in_fill_lp = icache_block_width_p / icache_fill_width_p
-    , localparam fill_size_in_bank_lp = icache_fill_width_p / bank_width_lp
-    , localparam icache_pkt_width_lp = `bp_fe_icache_pkt_width(vaddr_width_p)
-
     , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+
+    , localparam icache_pkt_width_lp     = `bp_fe_icache_pkt_width(vaddr_width_p)
+    , localparam lg_icache_assoc_lp      =`BSG_SAFE_CLOG2(icache_assoc_p)
+    , localparam num_words_per_block_lp  = icache_block_width_p / word_width_p
+    , localparam bank_width_lp           = icache_block_width_p / icache_assoc_p
+    , localparam num_words_per_bank_lp   = bank_width_lp / word_width_p
+    , localparam word_offset_width_lp    = `BSG_SAFE_CLOG2(num_words_per_bank_lp)
+    , localparam data_mem_mask_width_lp  = (bank_width_lp >> 3)
+    , localparam byte_offset_width_lp    = `BSG_SAFE_CLOG2(dword_width_p >> 3)
+    , localparam bindex_width_lp         = `BSG_SAFE_CLOG2(icache_assoc_p)
+    , localparam sindex_width_lp         = `BSG_SAFE_CLOG2(icache_sets_p)
+    , localparam block_offset_width_lp   = (bindex_width_lp+byte_offset_width_lp)
+    , localparam block_size_in_fill_lp   = icache_block_width_p / icache_fill_width_p
+    , localparam fill_size_in_bank_lp    = icache_fill_width_p / bank_width_lp
     )
    (input                                              clk_i
     , input                                            reset_i
@@ -108,7 +107,7 @@ module bp_fe_icache
     , input [icache_tag_mem_pkt_width_lp-1:0]          tag_mem_pkt_i
     , input                                            tag_mem_pkt_v_i
     , output logic                                     tag_mem_pkt_yumi_o
-    , output logic [ptag_width_p-1:0]                  tag_mem_o
+    , output logic [icache_tag_info_width_lp-1:0]      tag_mem_o
 
     , input [icache_stat_mem_pkt_width_lp-1:0]         stat_mem_pkt_i
     , input                                            stat_mem_pkt_v_i
@@ -135,28 +134,28 @@ module bp_fe_icache
 
   // SRAM connections
   `bp_cast_i(bp_icache_tag_mem_pkt_s, tag_mem_pkt);
-  logic                                                               tag_mem_v_li;
-  logic                                                               tag_mem_w_li;
-  logic [index_width_lp-1:0]                                          tag_mem_addr_li;
-  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_p-1:0] tag_mem_data_li;
-  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_p-1:0] tag_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)+ptag_width_p-1:0] tag_mem_data_lo;
+  logic                                                           tag_mem_v_li;
+  logic                                                           tag_mem_w_li;
+  logic [sindex_width_lp-1:0]                                     tag_mem_addr_li;
+  bp_icache_tag_info_s [icache_assoc_p-1:0]                       tag_mem_data_li;
+  bp_icache_tag_info_s [icache_assoc_p-1:0]                       tag_mem_w_mask_li;
+  bp_icache_tag_info_s [icache_assoc_p-1:0]                       tag_mem_data_lo;
 
   `bp_cast_i(bp_icache_data_mem_pkt_s, data_mem_pkt);
-  logic [icache_assoc_p-1:0]                                          data_mem_v_li;
-  logic                                                               data_mem_w_li;
-  logic [icache_assoc_p-1:0][index_width_lp+bank_offset_width_lp-1:0] data_mem_addr_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                       data_mem_data_li;
-  logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]              data_mem_w_mask_li;
-  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                       data_mem_data_lo;
+  logic [icache_assoc_p-1:0]                                      data_mem_v_li;
+  logic                                                           data_mem_w_li;
+  logic [icache_assoc_p-1:0][sindex_width_lp+bindex_width_lp-1:0] data_mem_addr_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                   data_mem_data_li;
+  logic [icache_assoc_p-1:0][data_mem_mask_width_lp-1:0]          data_mem_w_mask_li;
+  logic [icache_assoc_p-1:0][bank_width_lp-1:0]                   data_mem_data_lo;
 
   `bp_cast_i(bp_icache_stat_mem_pkt_s, stat_mem_pkt);
-  logic                                                               stat_mem_v_li;
-  logic                                                               stat_mem_w_li;
-  logic [index_width_lp-1:0]                                          stat_mem_addr_li;
-  bp_icache_stat_info_s                                               stat_mem_data_li;
-  bp_icache_stat_info_s                                               stat_mem_mask_li;
-  bp_icache_stat_info_s                                               stat_mem_data_lo;
+  logic                                                           stat_mem_v_li;
+  logic                                                           stat_mem_w_li;
+  logic [sindex_width_lp-1:0]                                     stat_mem_addr_li;
+  bp_icache_stat_info_s                                           stat_mem_data_li;
+  bp_icache_stat_info_s                                           stat_mem_mask_li;
+  bp_icache_stat_info_s                                           stat_mem_data_lo;
 
   // Pre-TL stage
   `bp_cast_i(bp_fe_icache_pkt_s, icache_pkt);
@@ -165,19 +164,16 @@ module bp_fe_icache
   wire is_fencei = v_i & (icache_pkt_cast_i.op == e_icache_fencei);
   wire is_fill   = v_i & (icache_pkt_cast_i.op == e_icache_fill);
 
-  wire [vaddr_width_p-1:0]        vaddr        = icache_pkt_cast_i.vaddr;
-  wire [vtag_width_p-1:0]         vaddr_vtag   = vaddr[block_offset_width_lp+index_width_lp+:vtag_width_p];
-  wire [index_width_lp-1:0]       vaddr_index  = vaddr[block_offset_width_lp+:index_width_lp];
-  wire [bank_offset_width_lp-1:0] vaddr_offset = vaddr[byte_offset_width_lp+:bank_offset_width_lp];
+  wire [vaddr_width_p-1:0]   vaddr       = icache_pkt_cast_i.vaddr;
+  wire [vtag_width_p-1:0]    vaddr_vtag  = vaddr[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
+  wire [sindex_width_lp-1:0] vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0] vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
 
   assign yumi_o = cache_req_ready_i & is_ready & (~v_tl_r | tv_we | force_i) & v_i;
 
   // TL stage
   logic [vaddr_width_p-1:0] vaddr_tl_r;
   logic fetch_op_tl_r, fencei_op_tl_r, fill_op_tl_r;
-
-  logic [icache_assoc_p-1:0][$bits(bp_coh_states_e)-1:0] state_tl;
-  logic [icache_assoc_p-1:0][ptag_width_p-1:0] tag_tl;
 
   logic cached_tl, uncached_tl;
 
@@ -206,59 +202,44 @@ module bp_fe_icache
   assign tl_vaddr_o = vaddr_tl_r;
   assign tl_v_o = v_tl_r;
 
-  for (genvar i = 0; i < icache_assoc_p; i++) begin
-    assign state_tl[i] = tag_mem_data_lo[i][ptag_width_p+:$bits(bp_coh_states_e)];
-    assign tag_tl[i]   = tag_mem_data_lo[i][0+:ptag_width_p];
-  end
-
   logic [ptag_width_p-1:0]           addr_tag_tl;
-  logic [bank_offset_width_lp-1:0]   addr_bank_offset_tl;
-  logic [icache_assoc_p-1:0]         addr_bank_offset_dec_tl;
+  logic [icache_assoc_p-1:0]         bank_sel_one_hot_tl;
   logic [icache_assoc_p-1:0]         hit_v_tl;
   logic                              miss_v_tl;
   logic [paddr_width_p-1:0]          addr_tl;
   logic [icache_assoc_p-1:0]         way_v_tl;
-  logic [index_width_lp-1:0]         vaddr_index_tl;
-  logic [vtag_width_p-1:0]           vaddr_vtag_tl;
    
   assign addr_tl = {ptag_i, vaddr_tl_r[0+:bp_page_offset_width_gp]};
-  assign addr_tag_tl = addr_tl[block_offset_width_lp+index_width_lp+:ptag_width_p];
-  assign addr_bank_offset_tl = addr_tl[byte_offset_width_lp+:bank_offset_width_lp];
 
-  assign vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:index_width_lp];
-  assign vaddr_vtag_tl = vaddr_tl_r[block_offset_width_lp+index_width_lp+:vtag_width_p];
+  wire [vtag_width_p-1:0]    vaddr_vtag_tl  = vaddr_tl_r[block_offset_width_lp+sindex_width_lp+:vtag_width_p];
+  wire [sindex_width_lp-1:0] vaddr_index_tl = vaddr_tl_r[block_offset_width_lp+:sindex_width_lp];
+  wire [bindex_width_lp-1:0] vaddr_bank_tl  = vaddr_tl_r[byte_offset_width_lp+:bindex_width_lp];
 
-  for (genvar i = 0; i < icache_assoc_p; i++) begin: tag_comp_tl
-    assign hit_v_tl[i]   = (tag_tl[i] == addr_tag_tl) && (state_tl[i] != e_COH_I);
-    assign way_v_tl[i]   = (state_tl[i] != e_COH_I);
-  end
+  for (genvar i = 0; i < icache_assoc_p; i++)
+    begin : tag_comp_tl
+      assign way_v_tl[i] = (tag_mem_data_lo[i].state != e_COH_I);
+      assign hit_v_tl[i] = (tag_mem_data_lo[i].tag == ptag_i) && way_v_tl[i];
+    end
   assign miss_v_tl = ~|hit_v_tl;
 
-  bsg_decode
-   #(.num_out_p(icache_assoc_p))
-   offset_decode
-    (.i(addr_bank_offset_tl)
-     ,.o(addr_bank_offset_dec_tl)
-     );
-
   assign cached_tl   = (fetch_op_tl_r | fill_op_tl_r) & ~ptag_uncached_i;
-  assign uncached_tl = (fetch_op_tl_r | fill_op_tl_r) & ptag_uncached_i;
+  assign uncached_tl = (fetch_op_tl_r | fill_op_tl_r) &  ptag_uncached_i;
+
+  assign bank_sel_one_hot_tl = 1'b1 << vaddr_bank_tl;
+
 
   // TV stage
   logic                                                      cached_tv_r;
   logic                                                      uncached_tv_r;
-  logic [paddr_width_p-1:0]                                  addr_tv_r;
+  logic [paddr_width_p-1:0]                                  paddr_tv_r;
   logic [vaddr_width_p-1:0]                                  vaddr_tv_r;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]              ld_data_tv_r;
-  logic [icache_assoc_p-1:0]                                 addr_bank_offset_dec_tv_r;
+  logic [icache_assoc_p-1:0]                                 bank_sel_one_hot_tv_r;
   logic                                                      fencei_op_tv_r;
   logic                                                      fill_op_tv_r;
   logic [icache_assoc_p-1:0]                                 hit_v_tv_r;
   logic                                                      complete_tv_r;
-
-  logic [icache_assoc_p-1:0]     way_v_tv_r;
-  logic [lg_icache_assoc_lp-1:0] way_invalid_index;
-  logic                          invalid_exist;
+  logic [icache_assoc_p-1:0]                                 way_v_tv_r;
 
 
   assign tv_we = ~v_tv_r | data_yumi_i;
@@ -323,16 +304,47 @@ module bp_fe_icache
      ,.en_i(tv_we)
      ,.data_i({addr_tl, vaddr_tl_r
                ,cached_tl, uncached_tl, fencei_op_tl_r, fill_op_tl_r
-               ,addr_bank_offset_dec_tl, way_v_tl
+               ,bank_sel_one_hot_tl, way_v_tl
                })
-     ,.data_o({addr_tv_r, vaddr_tv_r
+     ,.data_o({paddr_tv_r, vaddr_tv_r
                ,cached_tv_r, uncached_tv_r
                ,fencei_op_tv_r, fill_op_tv_r
-               ,addr_bank_offset_dec_tv_r, way_v_tv_r
+               ,bank_sel_one_hot_tv_r, way_v_tv_r
                })
      );
   assign tv_v_o = v_tv_r;
   assign tv_vaddr_o = vaddr_tv_r;
+
+  logic [icache_assoc_p-1:0] ld_data_way_select;
+  bsg_adder_one_hot
+   #(.width_p(icache_assoc_p))
+   select_adder
+    (.a_i(hit_v_tv_r)
+     ,.b_i(bank_sel_one_hot_tv_r)
+     ,.o(ld_data_way_select)
+     );
+
+  logic [bank_width_lp-1:0]   ld_data_way_picked;
+  bsg_mux_one_hot
+   #(.width_p(bank_width_lp), .els_p(icache_assoc_p))
+   data_set_select_mux
+    (.data_i(ld_data_tv_r)
+    ,.sel_one_hot_i(ld_data_way_select)
+    ,.data_o(ld_data_way_picked)
+    );
+
+  logic [instr_width_p-1:0] final_data;
+  bsg_mux
+   #(.width_p(instr_width_p), .els_p(num_words_per_bank_lp))
+   dword_select_mux
+    (.data_i(ld_data_way_picked)
+     ,.sel_i(paddr_tv_r[2+:`BSG_SAFE_CLOG2(num_words_per_bank_lp)])
+     ,.data_o(final_data)
+     );
+
+  assign data_o          = final_data;
+  assign data_v_o        = v_tv_r & complete_tv_r;
+  assign miss_not_data_o = v_tv_r & complete_tv_r & ~hit_v_tv_r;
 
   logic [lg_icache_assoc_lp-1:0] lru_encode;
   bsg_lru_pseudo_tree_encode
@@ -342,10 +354,10 @@ module bp_fe_icache
      ,.way_id_o(lru_encode)
      );
 
+  logic invalid_exist;
+  logic [lg_icache_assoc_lp-1:0] way_invalid_index;
   bsg_priority_encode
-   #(.width_p(icache_assoc_p)
-     ,.lo_to_hi_p(1)
-     )
+   #(.width_p(icache_assoc_p), .lo_to_hi_p(1))
    pe_invalid
     (.i(~way_v_tv_r)
      ,.v_o(invalid_exist)
@@ -363,13 +375,13 @@ module bp_fe_icache
     cache_req_v_o = '0;
 
     if (cached_req) begin
-      cache_req_cast_o.addr = addr_tv_r;
+      cache_req_cast_o.addr = paddr_tv_r;
       cache_req_cast_o.msg_type = e_miss_load;
       cache_req_cast_o.size = e_size_64B;
       cache_req_v_o = cache_req_ready_i;
     end
     else if (uncached_req) begin
-      cache_req_cast_o.addr = addr_tv_r;
+      cache_req_cast_o.addr = paddr_tv_r;
       cache_req_cast_o.msg_type = e_uc_load;
       cache_req_cast_o.size = e_size_4B;
       cache_req_v_o = cache_req_ready_i;
@@ -396,73 +408,35 @@ module bp_fe_icache
   assign cache_req_metadata_cast_o.repl_way = invalid_exist ? way_invalid_index : lru_encode;
   assign cache_req_metadata_cast_o.dirty = '0;
 
-  logic [bank_width_lp-1:0]   ld_data_way_picked;
-  logic [icache_assoc_p-1:0]  ld_data_way_select;
-
-  bsg_adder_one_hot
-   #(.width_p(icache_assoc_p))
-   select_adder
-    (.a_i(hit_v_tv_r)
-     ,.b_i(addr_bank_offset_dec_tv_r)
-     ,.o(ld_data_way_select)
-     );
-
-  bsg_mux_one_hot
-   #(.width_p(bank_width_lp), .els_p(icache_assoc_p))
-   data_set_select_mux
-    (.data_i(ld_data_tv_r)
-    ,.sel_one_hot_i(ld_data_way_select)
-    ,.data_o(ld_data_way_picked)
-    );
-
-  logic [instr_width_p-1:0] final_data;
-  bsg_mux
-   #(.width_p(instr_width_p), .els_p(num_words_per_bank_lp))
-   dword_select_mux
-    (.data_i(ld_data_way_picked)
-     ,.sel_i(addr_tv_r[2+:`BSG_SAFE_CLOG2(num_words_per_bank_lp)])
-     ,.data_o(final_data)
-     );
-
-  assign data_o          = final_data;
-  assign data_v_o        = v_tv_r & complete_tv_r;
-  assign miss_not_data_o = v_tv_r & complete_tv_r & ~hit_v_tv_r;
-
   // data mem
   logic                                                       data_mem_v;
   logic [icache_assoc_p-1:0]                                  data_mem_write_bank_mask;
   logic [icache_assoc_p-1:0][bank_width_lp-1:0]               data_mem_pkt_data_expanded;
   logic [block_size_in_fill_lp-1:0][fill_size_in_bank_lp-1:0] data_mem_pkt_fill_mask_expanded;
 
-  logic                      data_mem_last_read_r;
-  logic                      data_mem_bypass;
-  logic [icache_assoc_p-1:0] data_mem_bypass_select;
-  logic [icache_assoc_p-1:0] vaddr_offset_dec;
-
-  // during a data mem bypass, only the necessary bank of data memory will be valid
-  bsg_dff_reset #(.width_p(1))
-    data_mem_last_read_reg
+  logic data_mem_last_read_r;
+  bsg_dff_reset
+   #(.width_p(1))
+   data_mem_last_read_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.data_i(tl_we)
      ,.data_o(data_mem_last_read_r)
-    );
+     );
 
-  bsg_decode #(.num_out_p(icache_assoc_p)) 
-    input_offset_decode 
-    (.i(vaddr_offset)
-     ,.o(vaddr_offset_dec)
-    );
-
-  bsg_adder_one_hot #(.width_p(icache_assoc_p))
-    data_mem_bank_select_adder
+  // during a data mem bypass, only the necessary bank of data memory will be valid
+  logic [icache_assoc_p-1:0] data_mem_bypass_select;
+  wire [icache_assoc_p-1:0] vaddr_bank_dec = 1'b1 << vaddr_bank;
+  bsg_adder_one_hot
+   #(.width_p(icache_assoc_p))
+   data_mem_bank_select_adder
     (.a_i(hit_v_tl)
-     ,.b_i(vaddr_offset_dec)
+     ,.b_i(vaddr_bank_dec)
      ,.o(data_mem_bypass_select)
-    );
+     );
 
   // the following bypass logic assumes that vtag->ptag mapping will not change during bypass
-  assign data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & data_mem_last_read_r;
+  wire data_mem_bypass = (vaddr_vtag == vaddr_vtag_tl) & (vaddr_index == vaddr_index_tl) & data_mem_last_read_r;
 
   assign data_mem_v = (data_mem_pkt_cast_i.opcode != e_cache_data_mem_uncached) & data_mem_pkt_yumi_o;
 
@@ -475,10 +449,10 @@ module bp_fe_icache
   assign data_mem_w_li = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write);
 
   for (genvar i = 0; i < icache_assoc_p; i++) begin : rof1
-    wire [bank_offset_width_lp-1:0] data_mem_pkt_offset = (bank_offset_width_lp'(i) - data_mem_pkt_cast_i.way_id);
+    wire [bindex_width_lp-1:0] data_mem_pkt_offset = (bank_width_lp'(i) - data_mem_pkt_cast_i.way_id);
 
     assign data_mem_addr_li[i] = tl_we
-      ? {vaddr_index, vaddr_offset}
+      ? {vaddr_index, vaddr_bank}
       : is_recover
         ? vaddr_index_tl
         : {data_mem_pkt_cast_i.index, data_mem_pkt_offset};
@@ -490,17 +464,8 @@ module bp_fe_icache
   // Expand the bank write mask to bank width
   assign data_mem_pkt_data_expanded = {block_size_in_fill_lp{data_mem_pkt_cast_i.data}};
 
-  wire [`BSG_SAFE_CLOG2(icache_block_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
-  bsg_rotate_left
-   #(.width_p(icache_block_width_p))
-   write_data_rotate
-    (.data_i(data_mem_pkt_data_expanded)
-     ,.rot_i(write_data_rot_li)
-     ,.o(data_mem_data_li)
-     );
-
   bsg_expand_bitmask
-   #(.in_width_p(index_width_lp), .expand_p(fill_size_in_bank_lp))
+   #(.in_width_p(block_size_in_fill_lp), .expand_p(fill_size_in_bank_lp))
    data_mask_expand
     (.i(data_mem_pkt_cast_i.fill_index)
      ,.o(data_mem_pkt_fill_mask_expanded)
@@ -515,7 +480,14 @@ module bp_fe_icache
      ,.o(data_mem_write_bank_mask)
      );
 
-  // tag_mem
+  wire [`BSG_SAFE_CLOG2(icache_block_width_p)-1:0] write_data_rot_li = data_mem_pkt_cast_i.way_id*bank_width_lp;
+  bsg_rotate_left
+   #(.width_p(icache_block_width_p))
+   write_data_rotate
+    (.data_i(data_mem_pkt_data_expanded)
+     ,.rot_i(write_data_rot_li)
+     ,.o(data_mem_data_li)
+     );
 
   // tag mem is bypassed if the index is the same on consecutive reads
   logic tag_mem_last_read_r;
@@ -548,17 +520,17 @@ module bp_fe_icache
       case (tag_mem_pkt_cast_i.opcode)
         e_cache_tag_mem_set_tag:
             begin
-              tag_mem_data_li[i]   = {tag_mem_pkt_cast_i.state, tag_mem_pkt_cast_i.tag};
+              tag_mem_data_li[i]   = '{state: tag_mem_pkt_cast_i.state, tag: tag_mem_pkt_cast_i.tag};
               tag_mem_w_mask_li[i] = {($bits(bp_coh_states_e)+ptag_width_p){tag_mem_way_one_hot[i]}};
             end
         e_cache_tag_mem_set_state:
             begin
-              tag_mem_data_li[i]   = {tag_mem_pkt_cast_i.state, '0};
+              tag_mem_data_li[i]   = '{state: tag_mem_pkt_cast_i.state, tag: '0};
               tag_mem_w_mask_li[i] = {{$bits(bp_coh_states_e){tag_mem_way_one_hot[i]}}, {ptag_width_p{1'b0}}};
             end
         default: // e_cache_tag_mem_set_clear
             begin
-              tag_mem_data_li[i]   = '0;
+              tag_mem_data_li[i]   = '{state: bp_coh_states_e'(0), tag: '0};
               tag_mem_w_mask_li[i] = {($bits(bp_coh_states_e)+ptag_width_p){1'b1}};
             end
       endcase
@@ -569,7 +541,7 @@ module bp_fe_icache
     ? complete_tv_r
     : stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   assign stat_mem_addr_li = (v_tv_r & ~uncached_tv_r & ~fencei_op_tv_r)
-    ? addr_tv_r[block_offset_width_lp+:index_width_lp]
+    ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
     : stat_mem_pkt_cast_i.index;
 
   logic [lg_icache_assoc_lp-1:0] hit_index_tv;
@@ -590,17 +562,8 @@ module bp_fe_icache
      ,.mask_o(lru_decode_mask_lo)
      );
 
-  always_comb
-    if (stat_mem_pkt_yumi_o)
-      begin
-        stat_mem_data_li.lru = {(icache_assoc_p-1){1'b0}};
-        stat_mem_mask_li.lru = {(icache_assoc_p-1){1'b1}};
-      end
-    else
-      begin
-        stat_mem_data_li.lru = lru_decode_data_lo;
-        stat_mem_mask_li.lru = lru_decode_mask_lo;
-      end
+  assign stat_mem_data_li.lru = stat_mem_pkt_yumi_o ? '0 : lru_decode_data_lo;
+  assign stat_mem_mask_li.lru = stat_mem_pkt_yumi_o ? '1 : lru_decode_mask_lo;
 
   // The main storage for the cache
   // There are 3 large SRAMs (must be hardened for good QoR):
@@ -633,7 +596,7 @@ module bp_fe_icache
      ,.data_o(tag_mem_pkt_way_r)
      );
   assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & ~tl_we;
-  assign tag_mem_o = tag_mem_data_lo[tag_mem_pkt_way_r][0+:ptag_width_p];
+  assign tag_mem_o = tag_mem_data_lo[tag_mem_pkt_way_r];
 
   for (genvar bank = 0; bank < icache_assoc_p; bank++)
     begin : data_mems

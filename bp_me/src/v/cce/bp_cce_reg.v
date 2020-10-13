@@ -221,6 +221,7 @@ module bp_cce_reg
             mshr_n.paddr = lce_req_hdr.addr;
             mshr_n.lru_way_id = lce_req_payload.lru_way_id;
             mshr_n.msg_size = lce_req_hdr.size;
+            // flags written here must have their flag_w_v bit set by the decoder
             mshr_n.flags[e_opd_rqf] = lce_req_rqf;
             mshr_n.flags[e_opd_ucf] = lce_req_ucf;
             mshr_n.flags[e_opd_nerf] = lce_req_nerf;

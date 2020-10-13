@@ -11,9 +11,6 @@
  *
  */
 
-// TODO:
-// 1. support locally uncached, globally cached/coherent
-
 module bp_cce_msg
   import bp_common_pkg::*;
   import bp_common_aviary_pkg::*;

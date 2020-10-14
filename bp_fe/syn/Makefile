@@ -12,10 +12,10 @@ export RESULTS_PATH := $(BP_FE_DIR)/syn/results
 export REPORT_PATH  := $(BP_FE_DIR)/syn/reports
 export TOUCH_PATH   := $(BP_FE_DIR)/syn/touchfiles
 
-export TB    ?= bp_fe_icache
+export TB    ?= bp_fe_top
 export CFG   ?= e_bp_unicore_half_cfg
 export SUITE ?= none
-export PROG  ?= test_load
+export PROG  ?= none
 export TAG   ?= none
 
 -include $(BP_TEST_DIR)/Makefile.tests

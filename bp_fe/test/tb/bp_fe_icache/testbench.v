@@ -70,7 +70,6 @@ module testbench
   logic [ptag_width_lp-1:0] ptag_li;
   logic uncached_li;
 
-  logic switch_cce_mode;
   always_comb begin
     cfg_bus_cast_li = '0;
     cfg_bus_cast_li.freeze = '0;

@@ -26,6 +26,12 @@ $(BUILD_DIR)/flist.vcs:
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v" >> $@
 	@echo "$(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v" >> $@
 
+$(TB_PATH)/$(TB)/$(PROG).tr:
+	$(PYTHON) $(TB_PATH)/$(TB)/trace_script.py $(TB_PATH)/$(TB)/
+
+$(SIM_DIR)/test.tr: $(TB_PATH)/$(TB)/$(PROG).tr
+	mv $< $@
+
 BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v test_bp.v)
 
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
@@ -36,7 +42,20 @@ $(SIM_DIR)/prog.mem:
 	@echo "10 00 00 00 14 00 00 00 18 00 00 00 1C 00 00 00" >> $@
 	@echo "20 00 00 00 24 00 00 00 28 00 00 00 2C 00 00 00" >> $@
 	@echo "30 00 00 00 34 00 00 00 38 00 00 00 3C 00 00 00" >> $@
+	@echo "40 00 00 00 44 00 00 00 38 00 00 00 4C 00 00 00" >> $@
+	@echo "50 00 00 00 54 00 00 00 58 00 00 00 5C 00 00 00" >> $@
+	@echo "60 00 00 00 64 00 00 00 68 00 00 00 6C 00 00 00" >> $@
+	@echo "70 00 00 00 74 00 00 00 78 00 00 00 7C 00 00 00" >> $@
+	@echo "80 00 00 00 84 00 00 00 88 00 00 00 8C 00 00 00" >> $@
+	@echo "90 00 00 00 94 00 00 00 98 00 00 00 9C 00 00 00" >> $@
+	@echo "A0 00 00 00 A4 00 00 00 A8 00 00 00 AC 00 00 00" >> $@
+	@echo "B0 00 00 00 B4 00 00 00 B8 00 00 00 BC 00 00 00" >> $@
+	@echo "C0 00 00 00 C4 00 00 00 C8 00 00 00 CC 00 00 00" >> $@
+	@echo "D0 00 00 00 D4 00 00 00 D8 00 00 00 DC 00 00 00" >> $@
+	@echo "E0 00 00 00 E4 00 00 00 E8 00 00 00 EC 00 00 00" >> $@
+	@echo "F0 00 00 00 F4 00 00 00 F8 00 00 00 FC 00 00 00" >> $@
 
 SIM_COLLATERAL  = $(addprefix $(SIM_DIR)/, simv simv.daidir)
+SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, test.tr)
 SIM_COLLATERAL += $(addprefix $(SIM_DIR)/, prog.mem)
 

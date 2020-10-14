@@ -15,7 +15,7 @@ export TOUCH_PATH   := $(BP_FE_DIR)/syn/touchfiles
 export TB    ?= bp_fe_top
 export CFG   ?= e_bp_unicore_half_cfg
 export SUITE ?= none
-export PROG  ?= none
+export PROG  ?= test_linear_fetch
 export TAG   ?= none
 
 -include $(BP_TEST_DIR)/Makefile.tests

@@ -12,6 +12,7 @@ module testbench
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
    , parameter trace_file_p = "test.tr"
+   , parameter start_pc_p = 32'h8000_0000
 
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
    , parameter mem_cap_in_bytes_p = 2**25
@@ -73,9 +74,10 @@ module testbench
 
   bp_fe_mock_be_trace
    #(.bp_params_p(bp_params_p)
-     ,.trace_replay_data_width_p(32)
+     ,.trace_replay_data_width_p(75)
      ,.trace_rom_addr_width_p(7)
      ,.trace_file_p(trace_file_p)
+     ,.start_pc_p(start_pc_p)
      )
    mock_be
     (.clk_i(clk_i)

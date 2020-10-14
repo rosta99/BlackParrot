@@ -71,10 +71,24 @@ module testbench
      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
      );
 
-  // TODO: Mock backend, not stub
-  assign fe_cmd_li = '0;
-  assign fe_cmd_v_li = '0;
-  assign fe_queue_ready_li = '0;
+  bp_fe_mock_be_trace
+   #(.bp_params_p(bp_params_p)
+     ,.trace_replay_data_width_p(32)
+     ,.trace_rom_addr_width_p(7)
+     ,.trace_file_p(trace_file_p)
+     )
+   mock_be
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.fe_queue_i(fe_queue_lo)
+     ,.fe_queue_v_i(fe_queue_v_lo)
+     ,.fe_queue_ready_o(fe_queue_ready_li)
+
+     ,.fe_cmd_o(fe_cmd_li)
+     ,.fe_cmd_v_o(fe_cmd_v_li)
+     ,.fe_cmd_yumi_i(fe_cmd_yumi_lo)
+     );
 
   bp_mem
    #(.bp_params_p(bp_params_p)

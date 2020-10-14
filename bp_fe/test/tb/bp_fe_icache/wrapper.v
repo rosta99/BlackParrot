@@ -79,8 +79,8 @@ module wrapper
   logic [icache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_li;
   logic [icache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_li;
   logic [icache_block_width_p-1:0] data_mem_lo;
-  logic [ptag_width_p-1:0] tag_mem_lo;
-  logic [stat_width_lp-1:0] stat_mem_lo;
+  logic [icache_tag_info_width_lp-1:0] tag_mem_lo;
+  logic [icache_stat_info_width_lp-1:0] stat_mem_lo;
 
   // Rolly fifo signals
   logic [ptag_width_p-1:0] fifo_ptag_lo;
@@ -134,16 +134,21 @@ module wrapper
     ,.cfg_bus_i(cfg_bus_i)
 
     ,.icache_pkt_i(icache_pkt)
+    ,.force_i(1'b0)
     ,.v_i(fifo_v_lo)
     ,.yumi_o(fifo_yumi_li)
 
     ,.ptag_i(fifo_ptag_r)
     ,.ptag_v_i(ptag_v_r)
-    ,.uncached_i(uncached_r)
+    ,.ptag_uncached_i(uncached_r)
+    ,.poison_i(1'b0)
     ,.tl_we_o()
+    ,.tl_v_o()
     ,.tv_we_o()
+    ,.tv_v_o()
 
-    ,.vaddr_o(vaddr_o)
+    ,.tl_vaddr_o()
+    ,.tv_vaddr_o(vaddr_o)
     ,.data_o(data_o)
     ,.data_v_o(data_v_o)
     ,.miss_not_data_o(miss_not_data_o)

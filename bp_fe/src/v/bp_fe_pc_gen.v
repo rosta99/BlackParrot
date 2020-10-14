@@ -30,21 +30,22 @@ module bp_fe_pc_gen
    //   The next PC to fetch, and its metadata.
    //   yumi-only, which advances the PC under regular conditions
    , output logic [vaddr_width_p-1:0]                next_pc_o
-   , input                                           tl_we_i
 
    // Cycle 0: Exceptions are raised by the TLB
    //   The fetch unit may poison TL in the cache if the prediction is
    //   determined to be wrong
-   , input                                           tv_we_i
-   , input [vaddr_width_p-1:0]                       tl_pc_i
    , output logic                                    override_o
+   , input                                           tl_we_i
+   , input [vaddr_width_p-1:0]                       tl_pc_i
 
    // Cycle 1:
-   //   The fetch packet coming from the I$, containing both the fetch PC and the next fetch PC
+   //   The fetch packet coming from the I$, containing both the fetch PC
+   //   and the next fetch PC
    , input [instr_width_p-1:0]                       fetch_instr_i
    , output [branch_metadata_fwd_width_p-1:0]        fetch_br_metadata_o
-   , input [vaddr_width_p-1:0]                       fetch_pc_i
    , input                                           fetch_yumi_i
+   , input                                           tv_we_i
+   , input [vaddr_width_p-1:0]                       tv_pc_i
 
    // Pipeline asynchronous 
    //   An affirmative branch resolution from the backend
@@ -59,14 +60,9 @@ module bp_fe_pc_gen
   `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p);
   `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p);
 
-  bp_fe_branch_metadata_fwd_s fetch_br_metadata;
-  assign fetch_br_metadata_o = fetch_br_metadata;
-  
-  bp_fe_branch_metadata_fwd_s redirect_br_metadata;
-  assign redirect_br_metadata = redirect_br_metadata_i;
-  
-  bp_fe_branch_metadata_fwd_s attaboy_br_metadata;
-  assign attaboy_br_metadata = attaboy_br_metadata_i;
+  `bp_cast_o(bp_fe_branch_metadata_fwd_s, fetch_br_metadata);
+  `bp_cast_i(bp_fe_branch_metadata_fwd_s, redirect_br_metadata);
+  `bp_cast_i(bp_fe_branch_metadata_fwd_s, attaboy_br_metadata);
 
   // The main stage registers
   bp_fe_pc_gen_stage_s [1:0] pc_gen_stage_n, pc_gen_stage_r;
@@ -90,10 +86,10 @@ module bp_fe_pc_gen
 
   // Global history
   logic [ghist_width_p-1:0] ghistory_n, ghistory_r;
-  wire ghistory_w_v_li = (fetch_yumi_i & is_br_site) | (redirect_v_i & redirect_br_metadata.is_br);
+  wire ghistory_w_v_li = (fetch_yumi_i & is_br_site) | (redirect_v_i & redirect_br_metadata_cast_i.is_br);
   assign ghistory_n = ghistory_w_v_li
-                      ? (redirect_v_i & redirect_br_metadata.is_br)
-                        ? redirect_br_metadata.ghist
+                      ? (redirect_v_i & redirect_br_metadata_cast_i.is_br)
+                        ? redirect_br_metadata_cast_i.ghist
                         : {ghistory_r[0+:ghist_width_p-1], pc_gen_stage_r[1].taken}
                       : ghistory_r;
   bsg_dff_reset
@@ -112,10 +108,10 @@ module bp_fe_pc_gen
   wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_r_li =
     {next_pc_o[2+:bht_idx_width_p], pc_gen_stage_n[0].ghist};
   wire bht_w_v_li =
-    (redirect_v_i & redirect_br_metadata.is_br) | (attaboy_yumi_o & attaboy_br_metadata.is_br);
+    (redirect_v_i & redirect_br_metadata_cast_i.is_br) | (attaboy_yumi_o & attaboy_br_metadata_cast_i.is_br);
   wire [bht_idx_width_p+ghist_width_p-1:0] bht_idx_w_li = redirect_v_i
-    ? {redirect_br_metadata.bht_idx, redirect_br_metadata.ghist}
-    : {attaboy_br_metadata.bht_idx, attaboy_br_metadata.ghist};
+    ? {redirect_br_metadata_cast_i.bht_idx, redirect_br_metadata_cast_i.ghist}
+    : {attaboy_br_metadata_cast_i.bht_idx, attaboy_br_metadata_cast_i.ghist};
   bp_fe_bht
    #(.vaddr_width_p(vaddr_width_p)
      ,.bht_idx_width_p(bht_idx_width_p+ghist_width_p)
@@ -134,13 +130,13 @@ module bp_fe_pc_gen
      );
 
   // BTB
-  wire redirect_jmp = redirect_br_metadata.is_jal | redirect_br_metadata.is_jalr;
-  wire redirect_br = redirect_br_metadata.is_br;
+  wire redirect_jmp = redirect_br_metadata_cast_i.is_jal | redirect_br_metadata_cast_i.is_jalr;
+  wire redirect_br = redirect_br_metadata_cast_i.is_br;
   wire redirect_br_nonbr = ~(redirect_jmp | redirect_br);
   wire btb_r_v_li = tl_we_i;
   wire btb_w_v_li = redirect_v_i
-                    & ((redirect_br_nonbr & redirect_br_metadata.src_btb)
-                      | (attaboy_yumi_o & ~redirect_br_metadata.src_btb)
+                    & ((redirect_br_nonbr & redirect_br_metadata_cast_i.src_btb)
+                      | (attaboy_yumi_o & ~redirect_br_metadata_cast_i.src_btb)
                       | (redirect_v_i & redirect_br_taken_i));
   bp_fe_btb
    #(.vaddr_width_p(vaddr_width_p)
@@ -160,14 +156,14 @@ module bp_fe_pc_gen
      ,.w_v_i(btb_w_v_li)
      ,.w_clr_i(redirect_br_nonbr)
      ,.w_jmp_i(redirect_jmp)
-     ,.w_tag_i(redirect_br_metadata.btb_tag)
-     ,.w_idx_i(redirect_br_metadata.btb_idx)
+     ,.w_tag_i(redirect_br_metadata_cast_i.btb_tag)
+     ,.w_idx_i(redirect_br_metadata_cast_i.btb_idx)
      ,.br_tgt_i(redirect_pc_i)
      );
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
 
   // Return address stack
-  assign return_addr_n = fetch_pc_i + vaddr_width_p'(4);
+  assign return_addr_n = tv_pc_i + vaddr_width_p'(4);
   bsg_dff_reset_en
    #(.width_p(vaddr_width_p))
    ras
@@ -180,7 +176,7 @@ module bp_fe_pc_gen
      );
 
   // Instruction scan
-  // Detects different branch characeteristics and immediate information
+  // Detects different branch characteristics and immediate information
   `declare_bp_fe_instr_scan_s(vaddr_width_p)
   bp_fe_instr_scan_s scan_instr;
   bp_fe_instr_scan
@@ -200,9 +196,9 @@ module bp_fe_pc_gen
   wire btb_miss_br    = ~pc_gen_stage_r[0].btb | (tl_pc_i != br_target);
   assign ovr_ret      = fetch_yumi_i & btb_miss_ras & is_ret;
   assign ovr_taken    = fetch_yumi_i & btb_miss_br & ((is_br & pc_gen_stage_r[0].bht) | is_jal);
-  assign br_target    = fetch_pc_i + scan_instr.imm;
+  assign br_target    = tv_pc_i + scan_instr.imm;
 
-  assign fetch_br_metadata =
+  assign fetch_br_metadata_cast_o =
     '{pred_taken: pc_gen_stage_r[1].taken | is_jalr // We can't predict target, but jalr are always taken
       ,src_btb  : pc_gen_stage_r[1].btb
       ,src_ret  : pc_gen_stage_r[1].ret
@@ -229,9 +225,9 @@ module bp_fe_pc_gen
       begin
         pc_gen_stage_n[0] = '0;
         pc_gen_stage_n[0].taken = redirect_br_taken_i;
-        pc_gen_stage_n[0].btb   = redirect_br_metadata.src_btb;
+        pc_gen_stage_n[0].btb   = redirect_br_metadata_cast_i.src_btb;
         pc_gen_stage_n[0].bht   = '0; // Does not come from metadata
-        pc_gen_stage_n[0].ret   = redirect_br_metadata.src_ret;
+        pc_gen_stage_n[0].ret   = redirect_br_metadata_cast_i.src_ret;
         pc_gen_stage_n[0].ovr   = '0; // Does not come from metadata
         pc_gen_stage_n[0].ghist = ghistory_n;
         next_pc_o               = redirect_pc_i;
@@ -274,14 +270,14 @@ module bp_fe_pc_gen
     begin
       if (redirect_v_i)
         begin
-          is_br_site   <= redirect_br_metadata.is_br;
-          is_jal_site  <= redirect_br_metadata.is_br;
-          is_jalr_site <= redirect_br_metadata.is_jalr;
-          is_call_site <= redirect_br_metadata.is_call;
-          is_ret_site  <= redirect_br_metadata.is_ret;
-          btb_tag_site <= redirect_br_metadata.btb_tag;
-          btb_idx_site <= redirect_br_metadata.btb_idx;
-          bht_idx_site <= redirect_br_metadata.bht_idx;
+          is_br_site   <= redirect_br_metadata_cast_i.is_br;
+          is_jal_site  <= redirect_br_metadata_cast_i.is_br;
+          is_jalr_site <= redirect_br_metadata_cast_i.is_jalr;
+          is_call_site <= redirect_br_metadata_cast_i.is_call;
+          is_ret_site  <= redirect_br_metadata_cast_i.is_ret;
+          btb_tag_site <= redirect_br_metadata_cast_i.btb_tag;
+          btb_idx_site <= redirect_br_metadata_cast_i.btb_idx;
+          bht_idx_site <= redirect_br_metadata_cast_i.bht_idx;
         end
       else if (fetch_yumi_i)
         begin
@@ -290,9 +286,9 @@ module bp_fe_pc_gen
           is_jalr_site <= is_jalr;
           is_call_site <= is_call;
           is_ret_site  <= is_ret;
-          btb_tag_site <= fetch_pc_i[2+btb_idx_width_p+:btb_tag_width_p];
-          btb_idx_site <= fetch_pc_i[2+:btb_idx_width_p];
-          bht_idx_site <= fetch_pc_i[2+:bht_idx_width_p];
+          btb_tag_site <= tv_pc_i[2+btb_idx_width_p+:btb_tag_width_p];
+          btb_idx_site <= tv_pc_i[2+:btb_idx_width_p];
+          bht_idx_site <= tv_pc_i[2+:bht_idx_width_p];
         end
     end
 

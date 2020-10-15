@@ -37,6 +37,7 @@ BUILD_COLLATERAL  = $(addprefix $(BUILD_DIR)/, flist.vcs wrapper.v testbench.v t
 $(SIM_DIR)/simv $(SIM_DIR)/simv.daidir: $(BUILD_DIR)/simv $(BUILD_DIR)/simv.daidir
 	@ln -nsf $(<D)/$(@F) $@
 
+# TODO: Automatically generate intelligently
 $(SIM_DIR)/prog.mem:
 	@echo "00 00 00 00 04 00 00 00 08 00 00 00 0C 00 00 00"  > $@
 	@echo "10 00 00 00 14 00 00 00 18 00 00 00 1C 00 00 00" >> $@

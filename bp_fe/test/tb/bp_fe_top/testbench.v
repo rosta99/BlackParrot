@@ -14,9 +14,7 @@ module testbench
    , parameter trace_file_p = "test.tr"
    , parameter start_pc_p = 32'h8000_0000
 
-   , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
    , parameter mem_cap_in_bytes_p = 2**25
-   , parameter mem_file_p = "prog.mem"
    , parameter dram_fixed_latency_p = 0
    )
   (input   clk_i
@@ -94,9 +92,8 @@ module testbench
 
   bp_mem
    #(.bp_params_p(bp_params_p)
-     ,.mem_offset_p(mem_offset_p)
-     ,.mem_load_p(1)
-     ,.mem_file_p(mem_file_p)
+     ,.mem_stripe_p(4)
+     ,.mem_offset_p(32'h8000_0000)
      ,.mem_cap_in_bytes_p(mem_cap_in_bytes_p)
      ,.dram_fixed_latency_p(dram_fixed_latency_p)
      )

@@ -172,6 +172,12 @@ module bp_fe_mock_be_trace
       endcase
     end
 
+
+    asfsadfasdfas
+    // TODO: Add fe_cmd FSM for sending responses, decouple from fe_queue FSM
+    // TODO: Add state reset message
+    // TODO: Add redirect message
+
   always_ff @(posedge clk_i)
     if (reset_i)
         state_r <= e_reset;

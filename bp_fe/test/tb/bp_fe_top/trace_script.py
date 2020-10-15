@@ -13,7 +13,7 @@ def main():
 
   file.write(tracer.print_header())
   
-  file.write(tracer.print_comment("Fetch linearly")
+  file.write(tracer.print_comment("Fetch linearly"))
   for i in range(0, 64, 4):
     temp_vaddr = 0x80000000 + i
     temp_instr = i
@@ -27,18 +27,18 @@ def main():
 
   file.write(tracer.print_header())
 
-  file.write(tracer.print_comment("Fetch, redirecting to the beginning a few times")
+  file.write(tracer.print_comment("Fetch, redirecting to the beginning a few times"))
   for i in range(0, 64, 4):
     temp_vaddr = 0x80000000 + i
     temp_instr = i
     file.write(tracer.recv_pc_instr(temp_vaddr, temp_instr))
-  file.write(tracer.send_redir(0x80000000))
+  file.write(tracer.send_redirect(0x80000000))
    
   for i in range(0, 64, 4):
     temp_vaddr = 0x80000000 + i
     temp_instr = i
     file.write(tracer.recv_pc_instr(temp_vaddr, temp_instr))
-  file.write(tracer.send_redir(0x80000000))
+  file.write(tracer.send_redirect(0x80000000))
 
   for i in range(0, 64, 4):
     temp_vaddr = 0x80000000 + i

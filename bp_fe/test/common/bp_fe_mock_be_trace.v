@@ -40,21 +40,45 @@ module bp_fe_mock_be_trace
   ///////////////////////////////////////////////
   // Output FIFO
   ///////////////////////////////////////////////
-  bp_fe_cmd_s fe_cmd_lo;
-  logic fe_cmd_v_lo, fe_cmd_ready_li;
+  bp_fe_cmd_s cmd_fifo_data_lo;
+  logic cmd_fifo_v_lo, cmd_fifo_ready_li;
+  bp_fe_cmd_s cmd_fifo_data_li;
+  logic cmd_fifo_v_li, cmd_fifo_yumi_lo;
   bsg_two_fifo
    #(.width_p($bits(bp_fe_cmd_s)))
    output_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.data_i(fe_cmd_lo)
+     ,.data_i(cmd_fifo_data_lo)
+     ,.v_i(cmd_fifo_v_lo)
+     ,.ready_o(cmd_fifo_ready_li)
+
+     ,.data_o(cmd_fifo_data_li)
+     ,.v_o(cmd_fifo_v_li)
+     ,.yumi_i(cmd_fifo_yumi_lo)
+     );
+
+  bp_fe_cmd_s fe_cmd_lo;
+  logic fe_cmd_v_lo, fe_cmd_ready_li;
+  bsg_fifo_bypass
+   #(.width_p($bits(bp_fe_cmd_s)))
+   output_bypass
+    (.data_i(fe_cmd_lo)
      ,.v_i(fe_cmd_v_lo)
      ,.ready_o(fe_cmd_ready_li)
 
      ,.data_o(fe_cmd_cast_o)
      ,.v_o(fe_cmd_v_o)
      ,.yumi_i(fe_cmd_yumi_i)
+
+     ,.fifo_data_o(cmd_fifo_data_lo)
+     ,.fifo_v_o(cmd_fifo_v_lo)
+     ,.fifo_ready_i(cmd_fifo_ready_li)
+
+     ,.fifo_data_i(cmd_fifo_data_li)
+     ,.fifo_v_i(cmd_fifo_v_li)
+     ,.fifo_yumi_o(cmd_fifo_yumi_lo)
      );
 
   bp_fe_queue_s fe_queue_li;
@@ -63,7 +87,8 @@ module bp_fe_mock_be_trace
    #(.width_p($bits(bp_fe_queue_s)))
    input_fifo
     (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+     // Close off the fifo while there's a pending 
+     ,.reset_i(reset_i | fe_cmd_v_o)
 
      ,.data_i(fe_queue_cast_i)
      ,.v_i(fe_queue_v_i)
@@ -122,6 +147,7 @@ module bp_fe_mock_be_trace
     ,.data_o(trace_rom_data_li)
     );
 
+  logic fetch_mispredict;
   always_comb
     begin
       fe_cmd_lo = '0;
@@ -132,6 +158,8 @@ module bp_fe_mock_be_trace
       trace_v_li    = '0;
       trace_data_li = '0;
       trace_yumi_li = '0;
+
+      fetch_mispredict = '0;
 
       case (state_r)
         e_reset: state_n = e_boot;
@@ -163,6 +191,8 @@ module bp_fe_mock_be_trace
                   trace_data_li.pc       = fe_queue_li.msg.fetch.pc;
                   trace_data_li.instr    = fe_queue_li.msg.fetch.instr;
 
+                  fetch_mispredict = (trace_data_li != trace_data_lo);
+
                   trace_v_li = trace_ready_lo & fe_queue_v_li;
                   fe_queue_yumi_lo = trace_v_li;
                 end
@@ -173,7 +203,7 @@ module bp_fe_mock_be_trace
     end
 
 
-    asfsadfasdfas
+    //asfsadfasdfas
     // TODO: Add fe_cmd FSM for sending responses, decouple from fe_queue FSM
     // TODO: Add state reset message
     // TODO: Add redirect message

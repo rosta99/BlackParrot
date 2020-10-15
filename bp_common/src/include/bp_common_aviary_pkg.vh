@@ -77,7 +77,7 @@ package bp_common_aviary_pkg;
 
       ,async_mem_clk         : 1
       ,mem_noc_max_credits   : 8
-      ,mem_noc_flit_width    : 64
+      ,mem_noc_flit_width    : 32
       ,mem_noc_cid_width     : 2
       ,mem_noc_len_width     : 4
 

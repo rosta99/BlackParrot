@@ -20,32 +20,20 @@ module testbench
    `declare_bp_fe_be_if_widths(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p)
    `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
 
-   // TRACE enable parameters
-   , parameter icache_trace_p              = 0
-   , parameter dcache_trace_p              = 0
-   , parameter lce_trace_p                 = 0
-   , parameter cce_trace_p                 = 0
-   , parameter dram_trace_p                = 0
-   , parameter vm_trace_p                  = 0
-   , parameter cmt_trace_p                 = 0
-   , parameter core_profile_p              = 0
-   , parameter pc_profile_p                = 0
-   , parameter br_profile_p                = 0
-   , parameter cosim_p                     = 0
-
    // COSIM parameters 
    , parameter checkpoint_p                = 0
+   , parameter cosim_p                     = 0
    , parameter cosim_memsize_p             = 0
    , parameter cosim_cfg_file_p            = "prog.cfg"
    , parameter cosim_instr_p               = 0
    , parameter warmup_instr_p              = 0
 
    // DRAM parameters
-   , parameter preload_mem_p               = 0
-   , parameter dram_fixed_latency_p        = 0
+   , parameter preload_mem_p                    = 0
+   , parameter dram_fixed_latency_p             = 0
    , parameter [paddr_width_p-1:0] mem_offset_p = dram_base_addr_gp
-   , parameter mem_cap_in_bytes_p = 2**27
-   , parameter mem_file_p         = "prog.mem"
+   , parameter mem_cap_in_bytes_p               = 2**27
+   , parameter mem_file_p                       = "prog.mem"
    )
   (input clk_i
    , input reset_i
@@ -159,7 +147,6 @@ module testbench
      ,.io_resp_ready_o(load_resp_ready_lo)
      );
   
-  logic cosim_en_lo;
   logic icache_trace_en_lo;
   logic dcache_trace_en_lo;
   logic lce_trace_en_lo;
@@ -171,19 +158,7 @@ module testbench
   logic pc_profile_en_lo;
   logic branch_profile_en_lo;
   bp_nonsynth_host
-   #(.bp_params_p(bp_params_p)
-     ,.icache_trace_p(icache_trace_p)
-     ,.dcache_trace_p(dcache_trace_p)
-     ,.lce_trace_p(lce_trace_p)
-     ,.cce_trace_p(cce_trace_p)
-     ,.dram_trace_p(dram_trace_p)
-     ,.vm_trace_p(vm_trace_p)
-     ,.cmt_trace_p(cmt_trace_p)
-     ,.core_profile_p(core_profile_p)
-     ,.pc_profile_p(pc_profile_p)
-     ,.br_profile_p(br_profile_p)
-     ,.cosim_p(cosim_p)
-     )
+   #(.bp_params_p(bp_params_p))
    host
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -206,7 +181,6 @@ module testbench
      ,.core_profile_en_o(core_profile_en_lo)
      ,.branch_profile_en_o(branch_profile_en_lo)
      ,.pc_profile_en_o(pc_profile_en_lo)
-     ,.cosim_en_o(cosim_en_lo)
      );
 
   bind bp_be_top
@@ -252,7 +226,7 @@ module testbench
   
        // We want to pass these values as parameters, but cannot in Verilator 4.025
        // Parameter-resolved constants must not use dotted references
-       ,.cosim_en_i(testbench.cosim_en_lo)
+       ,.cosim_en_i(testbench.cosim_p[0])
        ,.trace_en_i(testbench.cmt_trace_en_lo)
        ,.checkpoint_i(testbench.checkpoint_p == 1)
        ,.num_core_i(testbench.num_core_p)

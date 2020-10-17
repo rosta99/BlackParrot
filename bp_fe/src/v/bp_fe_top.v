@@ -76,6 +76,7 @@ module bp_fe_top
   /////////////////
   // FE cmd decoding
   `bp_cast_i(bp_fe_cmd_s, fe_cmd); 
+  logic fe_instr_v, fe_exception_v;
   logic next_pc_yumi_li, attaboy_yumi_lo;
 
   wire state_reset_v    = fe_cmd_v_i & (fe_cmd_cast_i.opcode == e_op_state_reset); 
@@ -251,13 +252,13 @@ module bp_fe_top
  
      ,.icache_pkt_i(icache_pkt)
      ,.force_i(cmd_nonattaboy_v)
-     ,.v_i(is_run | cmd_nonattaboy_v)
+     ,.v_i((is_run | cmd_nonattaboy_v) & ~fe_exception_v)
      ,.yumi_o(next_pc_yumi_li)
 
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
      ,.ptag_uncached_i(uncached_li)
-     ,.poison_i(cmd_nonattaboy_v | override_lo)
+     ,.poison_i(cmd_nonattaboy_v | override_lo | fe_exception_v)
      ,.tl_we_o(tl_we_lo)
      ,.tl_v_o(tl_v_lo)
      ,.tl_vaddr_o(icache_vaddr_tl_lo)
@@ -294,15 +295,15 @@ module bp_fe_top
      ,.stat_mem_o(stat_mem_o)
      );
   assign icache_data_yumi_li = icache_data_v_lo & fe_queue_ready_i;
+  wire icache_miss           = icache_data_v_lo & icache_miss_not_data_lo;
 
   /////////////////////////////////////////////////////////////////////////////
   // FE queue interface
   /////////////////////////////////////////////////////////////////////////////
   `bp_cast_o(bp_fe_queue_s, fe_queue);
-  wire fe_instr_v     = icache_data_v_lo;
-  wire icache_miss    = icache_data_v_lo & icache_miss_not_data_lo;
-  wire fe_exception_v = (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss);
-  assign fe_queue_v_o = fe_queue_ready_i & (fe_instr_v | fe_exception_v);
+  assign fe_instr_v     = fe_queue_ready_i & icache_data_v_lo;
+  assign fe_exception_v = fe_queue_ready_i & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss);
+  assign fe_queue_v_o   = (fe_instr_v | fe_exception_v);
   always_comb
     begin
       fe_queue_cast_o = '0;

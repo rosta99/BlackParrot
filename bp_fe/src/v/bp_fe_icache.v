@@ -215,7 +215,6 @@ module bp_fe_icache
   logic                                         complete_tv_r;
   logic [icache_assoc_p-1:0]                    way_v_tv_r;
 
-
   assign tv_we = ~v_tv_r | data_yumi_i;
   assign tv_we_o = tv_we;
   bsg_dff_reset_set_clear
@@ -230,15 +229,15 @@ module bp_fe_icache
 
   // The request completes when it comes back from the engine, or if
   //   there's a fetch hit or miss, or a fill
-  wire complete_tl = cache_req_complete_i | (fetch_op_tl_r | (fetch_cached_tl & |hit_v_tl));
+  wire complete_tl = is_recover | (fetch_op_tl_r | (fetch_cached_tl & |hit_v_tl));
   // We make a hit so that an arbitrary data word is selected from the
   //   snooped line, which has replicated versions of the word
-  wire [icache_assoc_p-1:0] hit_tl = cache_req_complete_i | hit_v_tl;
+  wire [icache_assoc_p-1:0] hit_tl = is_recover | hit_v_tl;
   bsg_dff_en
    #(.width_p(icache_assoc_p+1))
    complete_reg
     (.clk_i(clk_i)
-     ,.en_i(tv_we | cache_req_complete_i)
+     ,.en_i(tv_we | is_recover)
      ,.data_i({hit_tl, complete_tl})
      ,.data_o({hit_v_tv_r, complete_tv_r})
      );
@@ -567,7 +566,7 @@ module bp_fe_icache
     assign data_mem_addr_li[i] = tl_we
       ? {vaddr_index, vaddr_bank}
       : is_recover
-        ? vaddr_index_tl
+        ? {vaddr_index_tl, vaddr_bank_tl}
         : {data_mem_pkt_cast_i.index, data_mem_pkt_offset};
 
     assign data_mem_w_mask_li[i] = {data_mem_mask_width_lp{data_mem_write_bank_mask[i]}};
@@ -668,7 +667,7 @@ module bp_fe_icache
   always_comb
     case (state_r)
       e_ready  : state_n = cache_req_v_o ? e_miss : e_ready;
-      e_miss   : state_n = cache_req_complete_i ? v_tl_r ? e_recover : e_ready : e_miss;
+      e_miss   : state_n = cache_req_complete_i ? e_recover : e_miss;
       e_recover: state_n = e_ready;
       default : state_n = e_ready;
     endcase

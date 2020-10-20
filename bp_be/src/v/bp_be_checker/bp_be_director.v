@@ -240,15 +240,15 @@ module bp_be_director
         begin
           fe_cmd_pc_redirect_operands = '0;
 
-          fe_cmd_li.opcode                                    = e_op_pc_redirection;
-          fe_cmd_li.vaddr                                     = npc_n;
+          fe_cmd_li.opcode                                 = e_op_pc_redirection;
+          fe_cmd_li.vaddr                                  = npc_n;
           // TODO: Fill in missing subopcodes.  They're not used by FE yet...
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_trap;
           fe_cmd_pc_redirect_operands.branch_metadata_fwd  = '0;
           fe_cmd_pc_redirect_operands.misprediction_reason = e_not_a_branch;
           fe_cmd_pc_redirect_operands.priv                 = commit_pkt.priv_n;
           fe_cmd_pc_redirect_operands.translation_enabled  = commit_pkt.translation_en_n;
-          fe_cmd_li.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
+          fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 

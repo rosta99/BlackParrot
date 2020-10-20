@@ -90,6 +90,8 @@ module bp_fe_top
 
   wire trap_v        = pc_redirect_v
                        & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_trap);
+  wire ret_v         = pc_redirect_v
+                       & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_eret);
   wire br_miss_v     = pc_redirect_v
                        & (fe_cmd_cast_i.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
   wire br_res_taken  = (attaboy_v & fe_cmd_cast_i.operands.attaboy.taken)
@@ -156,10 +158,10 @@ module bp_fe_top
   logic [rv64_priv_width_gp-1:0] shadow_priv_n, shadow_priv_r;
   logic shadow_translation_en_n, shadow_translation_en_r;
 
-  wire shadow_w = state_reset_v | trap_v;
+  wire shadow_w = state_reset_v | trap_v | ret_v;
   assign shadow_priv_n = fe_cmd_cast_i.operands.pc_redirect_operands.priv;
   assign shadow_translation_en_n = fe_cmd_cast_i.operands.pc_redirect_operands.translation_enabled;
-  bsg_dff_reset_en
+  bsg_dff_reset_en_bypass
    #(.width_p(rv64_priv_width_gp+1))
    shadow_reg
     (.clk_i(clk_i)

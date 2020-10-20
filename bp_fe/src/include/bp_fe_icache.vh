@@ -1,7 +1,6 @@
 `ifndef BP_FE_ICACHE_VH
 `define BP_FE_ICACHE_VH
 
-
   typedef enum logic [1:0]
   {
     e_icache_fetch

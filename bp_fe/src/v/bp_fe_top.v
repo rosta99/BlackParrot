@@ -68,10 +68,11 @@ module bp_fe_top
   `bp_cast_i(bp_cfg_bus_s, cfg_bus);
 
   // State machine declaration
-  enum logic [1:0] {e_wait=2'd0, e_run} state_n, state_r;
+  enum logic [1:0] {e_wait=2'd0, e_resume, e_run} state_n, state_r;
   
-  wire is_wait  = (state_r == e_wait);
-  wire is_run   = (state_r == e_run);
+  wire is_wait   = (state_r == e_wait);
+  wire is_resume = (state_r == e_resume);
+  wire is_run    = (state_r == e_run);
   
   /////////////////
   // FE cmd decoding
@@ -172,8 +173,8 @@ module bp_fe_top
      ,.data_o({shadow_priv_r, shadow_translation_en_r})
      );
 
-  bp_pte_entry_leaf_s itlb_r_entry, entry_lo, passthrough_entry;
-  logic itlb_r_v_lo, itlb_v_lo, itlb_miss_lo, passthrough_v_lo;
+  bp_pte_entry_leaf_s itlb_r_entry, entry_lo, passthrough_entry, fill_entry;
+  logic itlb_r_v_lo, itlb_v_lo, itlb_miss_lo, passthrough_v_lo, fill_v_r;
   bp_tlb
    #(.bp_params_p(bp_params_p), .tlb_els_p(itlb_els_p))
    itlb
@@ -190,10 +191,30 @@ module bp_fe_top
      ,.miss_v_o(itlb_miss_lo)
      ,.entry_o(entry_lo)
      );
+  
+  // Forward the fill entry since we have a 1RW TLB
+  bsg_dff_en
+   #(.width_p($bits(bp_pte_entry_leaf_s)))
+   fill_entry_reg
+    (.clk_i(clk_i)
+     ,.en_i(itlb_fill_v)
+     ,.data_i(fe_cmd_cast_i.operands.itlb_fill_response.pte_entry_leaf)
+     ,.data_o(fill_entry)
+     );
+
+  bsg_dff_reset_set_clear
+   #(.width_p(1))
+   fill_entry_v_reg
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     ,.set_i(itlb_fill_v)
+     ,.clear_i(next_pc_yumi_li)
+     ,.data_o(fill_v_r)
+     );
   assign passthrough_entry = '{ptag: icache_vaddr_tl_lo[vaddr_width_p-1-:vtag_width_p], default: '0};
   assign passthrough_v_lo  = tl_v_lo;
-  assign itlb_r_entry      = shadow_translation_en_r ? entry_lo : passthrough_entry;
-  assign itlb_r_v_lo       = shadow_translation_en_r ? itlb_v_lo : passthrough_v_lo;
+  assign itlb_r_entry      = shadow_translation_en_r ? fill_v_r ? fill_entry : entry_lo : passthrough_entry;
+  assign itlb_r_v_lo       = shadow_translation_en_r ? (itlb_v_lo | fill_v_r) : passthrough_v_lo;
 
   logic uncached_li;
   bp_pma
@@ -253,8 +274,8 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
  
      ,.icache_pkt_i(icache_pkt)
-     ,.force_i(cmd_nonattaboy_v)
-     ,.v_i((is_run | cmd_nonattaboy_v) & ~fe_exception_v)
+     ,.force_i(is_resume)
+     ,.v_i(state_n == e_run)
      ,.yumi_o(next_pc_yumi_li)
 
      ,.ptag_i(ptag_li)
@@ -303,9 +324,9 @@ module bp_fe_top
   // FE queue interface
   /////////////////////////////////////////////////////////////////////////////
   `bp_cast_o(bp_fe_queue_s, fe_queue);
-  assign fe_instr_v     = fe_queue_ready_i & icache_data_v_lo;
-  assign fe_exception_v = fe_queue_ready_i & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss);
-  assign fe_queue_v_o   = (fe_instr_v | fe_exception_v);
+  assign fe_instr_v     = ~cmd_nonattaboy_v & fe_queue_ready_i & icache_data_v_lo;
+  assign fe_exception_v = ~cmd_nonattaboy_v & fe_queue_ready_i & (instr_access_fault_r | instr_page_fault_r | itlb_miss_r | icache_miss);
+  assign fe_queue_v_o   = fe_instr_v | fe_exception_v;
   always_comb
     begin
       fe_queue_cast_o = '0;
@@ -334,10 +355,12 @@ module bp_fe_top
   /////////////////////////////////////////////////////////////////////////////
   // Fetch state machine
   /////////////////////////////////////////////////////////////////////////////
+  // Need to stop at resume state to allow for TLB fill or other multicycle cmds
+  //   but TODO: not all commands
   always_comb
     case (state_r)
-      e_wait : state_n = cmd_nonattaboy_v ? e_run : e_wait;
-      e_run  : state_n = (fe_exception_v & ~cmd_nonattaboy_v) ? e_wait : e_run;
+      e_wait   : state_n = cmd_nonattaboy_v ? e_run : e_wait;
+      e_run    : state_n = fe_exception_v ? e_wait : e_run;
       default: state_n = e_wait;
     endcase
 

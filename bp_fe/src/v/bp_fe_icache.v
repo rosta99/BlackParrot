@@ -137,6 +137,7 @@ module bp_fe_icache
   /////////////////////////////////////////////////////////////////////////////
   `bp_cast_i(bp_fe_icache_pkt_s, icache_pkt);
 
+  // fencei turns into a regular fetch with a coherent I$
   wire is_fetch  = v_i & (icache_pkt_cast_i.op == e_icache_fetch);
   wire is_fencei = v_i & (icache_pkt_cast_i.op == e_icache_fencei);
   wire is_fill   = v_i & (icache_pkt_cast_i.op == e_icache_fill);
@@ -229,7 +230,7 @@ module bp_fe_icache
 
   // The request completes when it comes back from the engine, or if
   //   there's a fetch hit or miss, or a fill
-  wire complete_tl = is_recover | (fetch_op_tl_r | (fetch_cached_tl & |hit_v_tl));
+  wire complete_tl = is_recover | (fetch_op_tl_r | (fetch_cached_tl & |hit_v_tl)) | (fencei_op_tl_r & l1_coherent_p);
   // We make a hit so that an arbitrary data word is selected from the
   //   snooped line, which has replicated versions of the word
   wire [icache_assoc_p-1:0] hit_tl = is_recover | hit_v_tl;
@@ -324,7 +325,7 @@ module bp_fe_icache
 
   assign data_o          = final_data;
   assign data_v_o        = v_tv_r & complete_tv_r;
-  assign miss_not_data_o = v_tv_r & complete_tv_r & ~hit_v_tv_r;
+  assign miss_not_data_o = v_tv_r & complete_tv_r & (~|hit_v_tv_r | fencei_op_tv_r);
 
   /////////////////////////////////////////////////////////////////////////////
   // SRAM Storage
@@ -534,7 +535,7 @@ module bp_fe_icache
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
      ,.set_i(tl_we)
-     ,.clear_i(data_mem_w_li)
+     ,.clear_i(data_mem_w_li | ~tl_we)
      ,.data_o(data_mem_last_read_r)
      ); 
 
@@ -631,8 +632,7 @@ module bp_fe_icache
 
   wire uncached_req = is_ready & v_tv_r & fill_op_tv_r & ~complete_tv_r & fetch_uncached_tv_r;
   wire cached_req   = is_ready & v_tv_r & fill_op_tv_r & ~complete_tv_r & fetch_cached_tv_r;
-  // Don't flush on fencei when coherent
-  wire fencei_req   = is_ready & v_tv_r & fencei_op_tv_r & ~complete_tv_r & (l1_coherent_p == '0);
+  wire fencei_req   = is_ready & v_tv_r & fencei_op_tv_r & ~complete_tv_r & !l1_coherent_p;
 
   assign cache_req_v_o = cache_req_ready_i & |{uncached_req, cached_req, fencei_req};
   assign cache_req_cast_o =

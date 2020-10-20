@@ -65,7 +65,7 @@ module testbench
     return (`BP_SIM_CLK_PERIOD);
   endfunction
   
-  `declare_bp_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+  `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   
   bp_bedrock_cce_mem_msg_s proc_mem_cmd_lo;
   logic proc_mem_cmd_v_lo, proc_mem_cmd_ready_li;

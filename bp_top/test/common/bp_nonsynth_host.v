@@ -10,7 +10,7 @@ module bp_nonsynth_host
  import bp_me_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce_mem)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
    , parameter icache_trace_p         = 0
    , parameter dcache_trace_p         = 0
@@ -26,6 +26,7 @@ module bp_nonsynth_host
 
    , parameter host_max_outstanding_p = 32
    )
+<<<<<<< HEAD
   (input                                     clk_i
    , input                                   reset_i
 
@@ -48,6 +49,70 @@ module bp_nonsynth_host
    , output logic                            pc_profile_en_o
    , output logic                            branch_profile_en_o
    , output logic                            cosim_en_o
+=======
+  (input clk_i
+   , input reset_i
+
+   , input [cce_mem_msg_width_lp-1:0]              io_cmd_i
+   , input                                         io_cmd_v_i
+   , output logic                                  io_cmd_ready_o
+
+   , output logic [cce_mem_msg_width_lp-1:0]       io_resp_o
+   , output logic                                  io_resp_v_o
+   , input                                         io_resp_yumi_i
+
+   , output [num_core_p-1:0]                       program_finish_o
+   );
+
+import "DPI-C" context function void start();
+import "DPI-C" context function int scan();
+import "DPI-C" context function void pop();
+
+logic [63:0] ch;
+initial begin
+  start();
+end
+
+always_ff @(posedge clk_i) begin
+  ch = scan();
+end
+
+`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
+
+// HOST I/O mappings
+//localparam host_dev_base_addr_gp     = 32'h03??_????;
+
+// Host I/O mappings (arbitrarily decided for now)
+//   Overall host controls 32'h0300_0000-32'h03FF_FFFF
+
+localparam bootrom_base_addr_gp = paddr_width_p'(64'h0001_????);
+localparam getchar_base_addr_gp = paddr_width_p'(64'h0010_0000);
+localparam putchar_base_addr_gp = paddr_width_p'(64'h0010_1000);
+localparam finish_base_addr_gp  = paddr_width_p'(64'h0010_2???);
+
+bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
+bp_bedrock_cce_mem_msg_s io_resp_cast_o;
+
+assign io_cmd_li = io_cmd_i;
+assign io_resp_o = io_resp_cast_o;
+
+localparam lg_num_core_lp = `BSG_SAFE_CLOG2(num_core_p);
+
+logic io_cmd_v_lo, io_cmd_yumi_li;
+bsg_fifo_1r1w_small
+ #(.width_p($bits(bp_bedrock_cce_mem_msg_s)), .els_p(host_max_outstanding_p))
+ small_fifo
+  (.clk_i(clk_i)
+   ,.reset_i(reset_i)
+
+   ,.data_i(io_cmd_li)
+   ,.v_i(io_cmd_v_i)
+   ,.ready_o(io_cmd_ready_o)
+
+   ,.data_o(io_cmd_lo)
+   ,.v_o(io_cmd_v_lo)
+   ,.yumi_i(io_cmd_yumi_li)
+>>>>>>> dev
    );
 
   import "DPI-C" context function void start();
@@ -230,7 +295,7 @@ module bp_nonsynth_host
      ,.data_o(bootrom_final_lo)
      );
 
-  bp_cce_mem_msg_s host_io_resp_lo, domain_io_resp_lo, bootrom_io_resp_lo;
+  bp_bedrock_cce_mem_msg_s host_io_resp_lo, domain_io_resp_lo, bootrom_io_resp_lo;
   
   assign host_io_resp_lo = '{header: io_cmd_lo.header, data: ch};
   assign domain_io_resp_lo = '{header: io_cmd_lo.header, data: '0};

@@ -210,7 +210,9 @@ module bp_lce_req
           unique case (cache_req.msg_type)
             e_miss_store
             , e_miss_load: begin
-              state_n = e_send_cached_req;
+              state_n = (lce_mode_i == e_lce_mode_normal)
+                        ? e_send_cached_req
+                        : e_ready;
             end
             e_uc_store: begin
               lce_req_v_o = lce_req_ready_i;

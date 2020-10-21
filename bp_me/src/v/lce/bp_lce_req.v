@@ -60,6 +60,7 @@ module bp_lce_req
     // LCE Configuration
     , input [lce_id_width_p-1:0]                     lce_id_i
     , input bp_lce_mode_e                            lce_mode_i
+    , input                                          sync_done_i
 
     // LCE Req is able to sink any requests this cycle
     , output logic                                   ready_o
@@ -210,7 +211,7 @@ module bp_lce_req
           unique case (cache_req.msg_type)
             e_miss_store
             , e_miss_load: begin
-              state_n = (lce_mode_i == e_lce_mode_normal)
+              state_n = (lce_mode_i == e_lce_mode_normal) & sync_done_i
                         ? e_send_cached_req
                         : e_ready;
             end

@@ -187,18 +187,12 @@ module bp_be_director
 
           flush_o = 1'b1;
         end
-      // TODO: This is compliant but suboptimal, since satp is not required to flush TLBs
-      //   Should add message to fe-be interface
       else if (commit_pkt.sfence)
         begin
           fe_cmd_li.opcode = e_op_itlb_fence;
           fe_cmd_li.vaddr  = commit_pkt.npc;
 
-          fe_cmd_pc_redirect_operands = '0;
-          fe_cmd_pc_redirect_operands.translation_enabled = commit_pkt.translation_en_n;
-          fe_cmd_li.operands.pc_redirect_operands = fe_cmd_pc_redirect_operands;
-
-          fe_cmd_v_li     = fe_cmd_ready_lo;
+          fe_cmd_v_li = fe_cmd_ready_lo;
 
           flush_o = 1'b1;
         end
@@ -206,11 +200,12 @@ module bp_be_director
         begin
           fe_cmd_pc_redirect_operands = '0;
 
-          fe_cmd_li.opcode                                    = e_op_pc_redirection;
-          fe_cmd_li.vaddr                                     = commit_pkt.npc;
+          fe_cmd_li.opcode                                 = e_op_pc_redirection;
+          fe_cmd_li.vaddr                                  = commit_pkt.npc;
           fe_cmd_pc_redirect_operands.subopcode            = e_subop_translation_switch;
+          fe_cmd_pc_redirect_operands.priv                 = commit_pkt.priv_n;
           fe_cmd_pc_redirect_operands.translation_enabled  = commit_pkt.translation_en_n;
-          fe_cmd_li.operands.pc_redirect_operands             = fe_cmd_pc_redirect_operands;
+          fe_cmd_li.operands.pc_redirect_operands          = fe_cmd_pc_redirect_operands;
 
           fe_cmd_v_li = fe_cmd_ready_lo;
 

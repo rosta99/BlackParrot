@@ -18,7 +18,6 @@ buildroot_config        := $(BP_TEST_CFG_DIR)/buildroot_initramfs_config
 
 linux_wrkdir     := $(wrkdir)/linux
 linux_defconfig  := $(BP_TEST_CFG_DIR)/linux_defconfig
-linux_patch      := $(BP_TEST_CFG_DIR)/linux.patch
 vmlinux          := $(linux_wrkdir)/vmlinux
 vmlinux_stripped := $(linux_wrkdir)/vmlinux-stripped
 vmlinux_binary   := $(linux_wrkdir)/vmlinux.bin
@@ -42,7 +41,7 @@ $(buildroot_sysroot_stamp): $(buildroot_tar)
 	touch $@
 
 $(linux_wrkdir)/.config: $(linux_srcdir)
-	cd $(linux_srcdir); git stash; git apply $(linux_patch)
+	cd $(linux_srcdir);
 	mkdir -p $(dir $@)
 	cp -p $(linux_defconfig) $@
 	$(MAKE) -C $< O=$(linux_wrkdir) ARCH=riscv olddefconfig

@@ -35,10 +35,11 @@ let CORES_PER_JOB=${N}/${JOBS}+1
 
 # Run the regression in parallel on each configuration
 echo "Running ${JOBS} jobs with ${CORES_PER_JOB} cores per job"
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=0 WT_P=0 CFG={}" ::: "${cfgs[@]}"
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=1 WT_P=0 CFG={}" ::: "${cfgs[@]}"
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=1 WT_P=1 CFG={}" ::: "${cfgs[@]}"
-parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=0 WT_P=0 CFG=e_bp_custom_cfg NUM_CACHES_P=8 BP_NUM_LCE=8 BP_COH_NOC_CID_WIDTH=4"
+#parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=0 WT_P=0 CFG={}" ::: "${cfgs[@]}"
+#parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=1 WT_P=0 CFG={}" ::: "${cfgs[@]}"
+#parallel --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=1 WT_P=1 CFG={}" ::: "${cfgs[@]}"
+parallel -n0 --jobs ${JOBS} --results regress_logs --progress "$cmd_base UCE_P=0 WT_P=0
+CFG=e_bp_custom_cfg NUM_CACHES_P=8 BP_NUM_LCE=8 BP_COH_NOC_CID_WIDTH=4" ::: {1}
 
 # Check for failures in the report directory
 grep -cr "FAIL" */syn/reports/ && echo "[CI CHECK] $0: FAILED" && exit 1

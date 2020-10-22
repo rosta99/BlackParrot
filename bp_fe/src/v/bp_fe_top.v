@@ -276,7 +276,7 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
  
      ,.icache_pkt_i(icache_pkt)
-     ,.force_i(is_resume)
+     ,.force_i(is_resume | pc_redirect_v)
      ,.v_i(state_n == e_run)
      ,.yumi_o(next_pc_yumi_li)
 

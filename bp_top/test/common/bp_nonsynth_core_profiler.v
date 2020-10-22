@@ -278,9 +278,6 @@ module bp_nonsynth_core_profiler
       else
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "unknown");
 
-      //if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v & (stall_reason_enum.name() == "mispredict"))
-      //  $fwrite(file, "_%x\n", target_r);
-      //else if (~reset_i & ~freeze_i)
       if (~reset_i & ~freeze_i)
         $fwrite(file, "\n");
     end

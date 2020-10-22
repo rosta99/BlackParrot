@@ -86,7 +86,7 @@ module wrapper
    logic [num_caches_p-1:0][dcache_tag_mem_pkt_width_lp-1:0] tag_mem_pkt_lo;
    logic [num_caches_p-1:0][dcache_stat_mem_pkt_width_lp-1:0] stat_mem_pkt_lo;
    logic [num_caches_p-1:0][dcache_block_width_p-1:0] data_mem_lo;
-   logic [num_caches_p-1:0][ptag_width_lp-1:0] tag_mem_lo;
+   logic [num_caches_p-1:0][dcache_tag_info_width_lp-1:0] tag_mem_lo;
    logic [num_caches_p-1:0][dcache_stat_info_width_lp-1:0] stat_mem_lo;
 
    // Credits

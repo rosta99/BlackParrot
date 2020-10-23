@@ -87,7 +87,6 @@ module bp_nonsynth_core_profiler
 
     // ISD events
     , input mispredict
-    , input [vaddr_width_p-1:0] target
 
     , input long_haz
     , input control_haz
@@ -137,17 +136,6 @@ module bp_nonsynth_core_profiler
     (.clk_i(clk_i)
      ,.data_i(reservation)
      ,.data_o(reservation_r)
-     );
-
-  logic [vaddr_width_p-1:0] target_r;
-  bsg_dff_chain
-   #(.width_p(vaddr_width_p)
-     ,.num_stages_p(4)
-     )
-   target_pipe
-    (.clk_i(clk_i)
-     ,.data_i(target)
-     ,.data_o(target_r)
      );
 
   bp_be_commit_pkt_s commit_pkt_r;
@@ -216,9 +204,9 @@ module bp_nonsynth_core_profiler
       stall_stage_n[3].exception         |= exception;
       stall_stage_n[3].eret              |= eret;
       stall_stage_n[3]._interrupt        |= _interrupt;
-      stall_stage_n[3].control_haz       |= control_haz;
       stall_stage_n[3].load_dep          |= load_dep;
       stall_stage_n[3].mul_dep           |= mul_dep;
+      stall_stage_n[3].control_haz       |= control_haz;
       stall_stage_n[3].data_haz          |= data_haz;
       stall_stage_n[3].struct_haz        |= struct_haz;
 
@@ -279,9 +267,9 @@ module bp_nonsynth_core_profiler
 
   always_ff @(negedge clk_i)
     begin
-      if (~reset_i & ~freeze_i & commit_pkt_r.v)
+      if (~reset_i & ~freeze_i & commit_pkt_r.instret)
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "instr");
-      else if (~reset_i & ~freeze_i & ~commit_pkt_r.v & stall_reason_v)
+      else if (~reset_i & ~freeze_i & stall_reason_v)
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, stall_reason_enum.name());
       else
         $fwrite(file, "%0d,%x,%x,%x,%s", cycle_cnt, x_cord_li, y_cord_li, commit_pkt_r.pc, "unknown");

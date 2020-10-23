@@ -425,7 +425,7 @@ module testbench
          ,.fe_queue_stall(~fe.fe_queue_ready_i)                                                   \
                                                                                                   \
          ,.itlb_miss(fe.itlb_miss_r)                                                              \
-         ,.icache_miss(fe.icache_miss)                                                            \
+         ,.icache_miss(fe.icache.v_i & ~fe.icache.yumi_o)                                         \
          ,.icache_fence(fe.icache.fencei_req)                                                     \
          ,.branch_override(fe.pc_gen.ovr_taken & ~fe.pc_gen.ovr_ret)                              \
          ,.ret_override(fe.pc_gen.ovr_ret)                                                        \
@@ -433,19 +433,20 @@ module testbench
          ,.fe_cmd(fe.fe_cmd_v_i & ~fe.attaboy_v)                                                  \
                                                                                                   \
          ,.mispredict(be.director.npc_mismatch_v)                                                 \
-         ,.target(be.director.isd_status.isd_pc)                                                  \
                                                                                                   \
          ,.dtlb_miss(be.calculator.pipe_mem.dtlb_miss_v)                                          \
          ,.dcache_miss(~be.calculator.pipe_mem.dcache.ready_o)                                    \
-         ,.long_haz(be.detector.struct_haz_v)                                                     \
+         ,.long_haz(be.detector.long_haz_v)                                                       \
          ,.exception(be.director.commit_pkt.exception)                                            \
          ,.eret(be.director.commit_pkt.eret)                                                      \
          ,._interrupt(be.director.commit_pkt._interrupt)                                          \
          ,.control_haz(be.detector.control_haz_v)                                                 \
          ,.data_haz(be.detector.data_haz_v)                                                       \
-         ,.load_dep((be.detector.dep_status_r[0].emem_iwb_v                                       \
-                     | be.detector.dep_status_r[1].emem_iwb_v                                     \
-                     ) & be.detector.data_haz_v                                                   \
+         ,.load_dep((be.detector.dep_status_r[0].emem_iwb_v & be.detector.data_haz_v)             \
+                    | (be.detector.dep_status_r[0].fmem_iwb_v                                     \
+                       | be.detector.dep_status_r[1].fmem_iwb_v                                   \
+                       | be.detector.dep_status_r[2].fmem_iwb_v                                   \
+                       )                                                                          \
                     )                                                                             \
          ,.mul_dep((be.detector.dep_status_r[0].mul_iwb_v                                         \
                     | be.detector.dep_status_r[1].mul_iwb_v                                       \

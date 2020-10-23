@@ -463,7 +463,7 @@ module bp_fe_icache
   assign tag_mem_v_li = (tl_we & ~tag_mem_bypass) | is_recover | tag_mem_pkt_yumi_o;
   assign tag_mem_w_li = ~tl_we & ~is_recover & tag_mem_pkt_v_i & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   assign tag_mem_addr_li = tl_we ? vaddr_index : is_recover ? vaddr_index_tl : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & (~(tl_we | tag_mem_bypass) | is_recover);
+  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & (~(tl_we | is_recover) | tag_mem_bypass);
 
   logic [icache_assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
@@ -558,7 +558,7 @@ module bp_fe_icache
       ? data_mem_bypass_select 
       : {icache_assoc_p{1'b1}}
     : {icache_assoc_p{data_mem_pkt_v}};
-  assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~(tl_we | is_recover | data_mem_bypass) | (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached));
+  assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~(tl_we | is_recover) | data_mem_bypass | (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached));
 
   assign data_mem_w_li = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write);
 

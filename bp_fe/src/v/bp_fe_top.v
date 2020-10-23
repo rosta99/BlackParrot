@@ -263,7 +263,7 @@ module bp_fe_top
   bp_fe_icache_pkt_s icache_pkt;
   assign icache_pkt =
     '{vaddr: next_pc_lo
-      ,op  : icache_fence_v ? e_icache_fencei : icache_fill_v ? e_icache_fill : e_icache_fetch
+      ,op  : icache_fence_v ? e_icache_fencei : icache_fill_v ? e_icache_fill : e_icache_fill
       };
 
   logic icache_miss_not_data_lo;
@@ -298,7 +298,7 @@ module bp_fe_top
   
      ,.cache_req_o(cache_req_o)
      ,.cache_req_v_o(cache_req_v_o)
-     ,.cache_req_ready_i(cache_req_ready_i)
+     ,.cache_req_ready_i(cache_req_ready_i & ~cmd_nonattaboy_v)
      ,.cache_req_metadata_o(cache_req_metadata_o)
      ,.cache_req_metadata_v_o(cache_req_metadata_v_o)
      ,.cache_req_complete_i(cache_req_complete_i)

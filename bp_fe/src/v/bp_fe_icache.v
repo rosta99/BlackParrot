@@ -147,7 +147,7 @@ module bp_fe_icache
   wire [sindex_width_lp-1:0] vaddr_index = vaddr[block_offset_width_lp+:sindex_width_lp];
   wire [bindex_width_lp-1:0] vaddr_bank  = vaddr[byte_offset_width_lp+:bindex_width_lp];
 
-  assign yumi_o = cache_req_ready_i & is_ready & (~v_tl_r | tv_we | force_i) & v_i;
+  assign yumi_o = is_ready & (~v_tl_r | tv_we | force_i) & v_i;
 
   /////////////////////////////////////////////////////////////////////////////
   // TL stage
@@ -369,7 +369,6 @@ module bp_fe_icache
      ,.data_i(tag_mem_pkt_cast_i.way_id)
      ,.data_o(tag_mem_pkt_way_r)
      );
-  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & ~tl_we;
   assign tag_mem_o = tag_mem_data_lo[tag_mem_pkt_way_r];
 
   `bp_cast_i(bp_icache_data_mem_pkt_s, data_mem_pkt);
@@ -408,7 +407,6 @@ module bp_fe_icache
      ,.data_o(data_mem_pkt_way_r)
      );
 
-  assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~tl_we | (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached));
   wire [`BSG_SAFE_CLOG2(icache_block_width_p)-1:0] read_data_rot_li = data_mem_pkt_way_r*bank_width_lp;
   bsg_rotate_right
    #(.width_p(icache_block_width_p))
@@ -465,6 +463,7 @@ module bp_fe_icache
   assign tag_mem_v_li = (tl_we & ~tag_mem_bypass) | is_recover | tag_mem_pkt_yumi_o;
   assign tag_mem_w_li = ~tl_we & ~is_recover & tag_mem_pkt_v_i & (tag_mem_pkt_cast_i.opcode != e_cache_tag_mem_read);
   assign tag_mem_addr_li = tl_we ? vaddr_index : is_recover ? vaddr_index_tl : tag_mem_pkt_cast_i.index;
+  assign tag_mem_pkt_yumi_o = tag_mem_pkt_v_i & (~(tl_we | tag_mem_bypass) | is_recover);
 
   logic [icache_assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
@@ -559,6 +558,7 @@ module bp_fe_icache
       ? data_mem_bypass_select 
       : {icache_assoc_p{1'b1}}
     : {icache_assoc_p{data_mem_pkt_v}};
+  assign data_mem_pkt_yumi_o = data_mem_pkt_v_i & (~(tl_we | is_recover | data_mem_bypass) | (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached));
 
   assign data_mem_w_li = data_mem_pkt_yumi_o & (data_mem_pkt_cast_i.opcode == e_cache_data_mem_write);
 
@@ -576,8 +576,8 @@ module bp_fe_icache
   ///////////////////////////
   // Stat Mem Control
   ///////////////////////////
-  assign stat_mem_pkt_yumi_o = stat_mem_pkt_v_i & ~(v_tv_r & fetch_cached_tv_r);
   assign stat_mem_v_li = (v_tv_r & fetch_cached_tv_r) | stat_mem_pkt_yumi_o;
+  assign stat_mem_pkt_yumi_o = stat_mem_pkt_v_i & ~(v_tv_r & fetch_cached_tv_r);
   assign stat_mem_w_li = (v_tv_r & fetch_cached_tv_r)
     ? complete_tv_r
     : stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);

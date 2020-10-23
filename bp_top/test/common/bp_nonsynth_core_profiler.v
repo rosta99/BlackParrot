@@ -46,7 +46,7 @@
     ,long_haz            = 5'd3
     ,eret                = 5'd2
     ,exception           = 5'd1
-    ,_interrupt           = 5'd0
+    ,_interrupt          = 5'd0
   } bp_stall_reason_e;
 
 // The BlackParrot core pipeline is a mostly non-stalling pipeline, decoupled between the front-end
@@ -235,6 +235,14 @@ module bp_nonsynth_core_profiler
       stall_stage_n[5].exception         |= exception;
       stall_stage_n[5].eret              |= eret;
       stall_stage_n[5]._interrupt        |= _interrupt;
+
+      // EX4
+      stall_stage_n[6].dcache_miss       |= dcache_miss;
+      stall_stage_n[6].dtlb_miss         |= dtlb_miss;
+      stall_stage_n[6].dcache_miss       |= dcache_miss;
+      stall_stage_n[6].exception         |= exception;
+      stall_stage_n[6].eret              |= eret;
+      stall_stage_n[6]._interrupt        |= _interrupt;
     end
 
   bp_stall_reason_s stall_reason_dec;

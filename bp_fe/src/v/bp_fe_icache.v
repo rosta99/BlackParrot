@@ -579,7 +579,7 @@ module bp_fe_icache
   assign stat_mem_v_li = (v_tv_r & fetch_cached_tv_r) | stat_mem_pkt_yumi_o;
   assign stat_mem_pkt_yumi_o = stat_mem_pkt_v_i & ~(v_tv_r & fetch_cached_tv_r);
   assign stat_mem_w_li = (v_tv_r & fetch_cached_tv_r)
-    ? complete_tv_r
+    ? data_yumi_i
     : stat_mem_pkt_yumi_o & (stat_mem_pkt_cast_i.opcode != e_cache_stat_mem_read);
   assign stat_mem_addr_li = (v_tv_r & fetch_cached_tv_r)
     ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]

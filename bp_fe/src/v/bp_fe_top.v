@@ -71,7 +71,6 @@ module bp_fe_top
   enum logic [1:0] {e_wait=2'd0, e_resume, e_run} state_n, state_r;
   
   wire is_wait   = (state_r == e_wait);
-  wire is_resume = (state_r == e_resume);
   wire is_run    = (state_r == e_run);
   
   /////////////////
@@ -276,7 +275,7 @@ module bp_fe_top
      ,.cfg_bus_i(cfg_bus_i)
  
      ,.icache_pkt_i(icache_pkt)
-     ,.force_i(is_resume | pc_redirect_v)
+     ,.force_i(cmd_nonattaboy_v)
      ,.v_i(state_n == e_run)
      ,.yumi_o(next_pc_yumi_li)
 
